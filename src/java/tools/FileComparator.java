@@ -35,6 +35,9 @@ public class FileComparator {
     int SB_HRS_index;
     Predicate<String> validRow = s -> s.split(";").length >= 3 && isNumeric(s.split(";")[base_ndex]);
     Predicate<String> invalidRow = s -> s.split(";").length < 3 || !isNumeric(s.split(";")[base_ndex]);
+    private Map<String, List<String>> base_Lines;
+    private Map<String, List<String>> ELRA_POST_Lines;
+    private Map<String, List<String>> SB_HRS_Lines;
 
     public FileComparator(String base, int base_ndex, String ELRA_POST, int ELRA_POST_index, String SB_HRS, int SB_HRS_index, Charset charset) {
         this.base = base;
@@ -44,6 +47,17 @@ public class FileComparator {
         this.SB_HRS = SB_HRS;
         this.SB_HRS_index = SB_HRS_index;
         this.charset = charset;
+    }
+
+    public void loadFiles() throws IOException {
+        base_Lines = Files.readAllLines(Paths.get(base), charset)
+                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[base_ndex]));
+        //---
+        ELRA_POST_Lines = Files.readAllLines(Paths.get(ELRA_POST), charset)
+                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[ELRA_POST_index]));
+        //---
+        SB_HRS_Lines = Files.readAllLines(Paths.get(SB_HRS), charset)
+                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[SB_HRS_index]));
     }
 
     /*
@@ -59,56 +73,46 @@ public class FileComparator {
                 .stream().filter(invalidRow)
                 // .peek(s->System.out.println("invalid ---->"+s))
                 .collect(toList());
-        System.out.println("HRSTools:bad_baseOnly base_Lines ok: found " + bad_base_Lines.size());
         return bad_base_Lines;
     }
 
     public Map<String, List<String>> baseOnly() throws IOException {
-        Map<String, List<String>> base_Lines = Files.readAllLines(Paths.get(base), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[base_ndex]));
-        System.out.println("HRSTools:baseOnly base_Lines ok: found " + base_Lines.size());
-        //---
-        Map<String, List<String>> ELRA_POST_Lines = Files.readAllLines(Paths.get(ELRA_POST), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[ELRA_POST_index]));
-        System.out.println("HRSTools:ELRA_POST_Lines ok: found " + ELRA_POST_Lines.size());
-        //---
-        Map<String, List<String>> SB_HRS_Lines = Files.readAllLines(Paths.get(SB_HRS), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[SB_HRS_index]));
-        System.out.println("HRSTools:SB_HRS_Lines ok: found " + SB_HRS_Lines.size());
-        //---
-        return base_Lines.entrySet().stream()
+        return getBase_Lines().entrySet().stream()
                 .filter(e -> !ELRA_POST_Lines.containsKey(e.getKey()) && !SB_HRS_Lines.containsKey(e.getKey()))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     public Map<String, List<String>> ELRA_POST_only() throws IOException {
-        Predicate<String> validRow = s -> s.split(";").length >= 3 && isNumeric(s.split(";")[base_ndex]);
-        Map<String, List<String>> base_Lines = Files.readAllLines(Paths.get(base), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[base_ndex]));
-        System.out.println("HRSTools:baseOnly base_Lines ok: found " + base_Lines.size());
-        //---
-        Map<String, List<String>> ELRA_POST_Lines = Files.readAllLines(Paths.get(ELRA_POST), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[ELRA_POST_index]));
-        System.out.println("HRSTools:ELRA_POST_Lines ok: found " + ELRA_POST_Lines.size());
-        //---
-        return ELRA_POST_Lines.entrySet().stream()
+        return getELRA_POST_Lines().entrySet().stream()
                 .filter(e -> !base_Lines.containsKey(e.getKey()))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     public Map<String, List<String>> ESB_HRS_only() throws IOException {
-        Predicate<String> validRow = s -> s.split(";").length >= 3 && isNumeric(s.split(";")[base_ndex]);
-        Map<String, List<String>> base_Lines = Files.readAllLines(Paths.get(base), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[base_ndex]));
-        System.out.println("HRSTools:baseOnly base_Lines ok: found " + base_Lines.size());
-        //---
-        Map<String, List<String>> SB_HRS_Lines = Files.readAllLines(Paths.get(SB_HRS), charset)
-                .stream().filter(validRow).collect(Collectors.groupingBy(l -> l.split(";")[SB_HRS_index]));
-        System.out.println("HRSTools:ESB_HRS_Lines ok: found " + SB_HRS_Lines.size());
-        //---
-        return SB_HRS_Lines.entrySet().stream()
+        return getSB_HRS_Lines().entrySet().stream()
                 .filter(e -> !base_Lines.containsKey(e.getKey()))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+    }
+
+    /**
+     * @return the base_Lines
+     */
+    public Map<String, List<String>> getBase_Lines() {
+        return base_Lines;
+    }
+
+    /**
+     * @return the ELRA_POST_Lines
+     */
+    public Map<String, List<String>> getELRA_POST_Lines() {
+        return ELRA_POST_Lines;
+    }
+
+    /**
+     * @return the SB_HRS_Lines
+     */
+    public Map<String, List<String>> getSB_HRS_Lines() {
+        return SB_HRS_Lines;
     }
 
     public static boolean isNumeric(String strNum) {
@@ -123,47 +127,66 @@ public class FileComparator {
         return true;
     }
 
+    public void report() throws IOException {
+        List<String> myInvalidRows = getInvalidBaseRows();
+        Map<String, List<String>> hrsOnly = baseOnly();
+        Map<String, List<String>> VOD_ELRA_POST_only = ELRA_POST_only();
+        Map<String, List<String>> VOD_ESB_HRS_only = ESB_HRS_only();
+        //---
+        System.out.println();
+        System.out.println("*************** SUMMARY ***********");
+        System.out.println("\nATLANTIS Numbers found: " + getBase_Lines().size());
+        System.out.println("\nELRA_POST Numbers found: " + getELRA_POST_Lines().size());
+        System.out.println("\nSB_HRS Numbers found: " + getSB_HRS_Lines().size());
+        //---
+        System.out.println("\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
+        System.out.println("\nNumbers that exist ONLY in ATLANTIS (not in Vodafone), found: " + myInvalidRows.size());
+        System.out.println("\nReasons for  Numbers that exist ONLY in ATLANTIS database (not in Vodafone):");
+        Map<String, Long> atlantis_statuses = hrsOnly.values().stream().flatMap(v -> v.stream())
+                .collect(Collectors.groupingBy(s -> s.split(";")[2] + "(" + s.split(";")[3]+")", Collectors.counting()));
+        atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey());
+        });
+        System.out.println("\nReasons for Numbers that exist ONLY in VOD_ELRA_POST (not in ATLANTIS), found: " + VOD_ELRA_POST_only.size());
+        Map<String, Long> VOD_ELRA_statuses = VOD_ELRA_POST_only.values().stream().flatMap(v -> v.stream())
+                .collect(Collectors.groupingBy(s -> s.split(";")[5], Collectors.counting()));
+        VOD_ELRA_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey());
+        });
+        System.out.println("\nReasons for Numbers that exist ONLY in VOD_ESB_HRS (not in ATLANTIS), found: " + VOD_ESB_HRS_only.size());
+        Map<String, Long> VOD_ESB_HRS_statuses = VOD_ESB_HRS_only.values().stream().flatMap(v -> v.stream())
+                .collect(Collectors.groupingBy(s -> s.split(";")[2], Collectors.counting()));
+        VOD_ESB_HRS_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey());
+        });
+        System.out.println();
+        System.out.println("\n\n\n\n***************************************************************");
+        System.out.println("*** DETAILS ***");
+        System.out.println("***************************************************************");
+        //-------------
+        System.out.println("*** Invalid ATLANTIS rows details ***");
+        myInvalidRows.stream().filter(s -> !s.contains(";;;"))
+                .forEach(s -> System.out.println("  invalid number: " + s));
+        //---------
+        System.out.println("\n\n*** Numbers that exist ONLY in ATLANTIS (not found in Vodafone), details ***");
+        hrsOnly.values().stream().flatMap(v -> v.stream()).sorted(Comparator.comparing(s -> s.split(";")[2])).forEach(s -> {
+            System.out.println("  ONLY in HRS: " + s.split(";")[1] + " : " + s);
+        });
+        //----------
+        System.out.println("\n\n*** Numbers that exist ONLY in VOD_ELRA_POST (not in ATLANTIS): " + VOD_ELRA_POST_only.size());
+        VOD_ELRA_POST_only.values().stream().flatMap(v -> v.stream()).sorted(Comparator.comparing(s -> s.split(";")[2])).forEach(s -> System.out.println(" VOD_ELRA_POST_only-> " + s.split(";")[1] + " : " + s));
+        System.out.println("\n\n*** Numbers that exist ONLY in VOD_ESB_HRS (not in Atlanis): " + VOD_ESB_HRS_only.size());
+        VOD_ESB_HRS_only.values().stream().flatMap(v -> v.stream()).forEach(s -> System.out.println(" VOD_ESB_HRS_only-> " + s.split(";")[1] + " :" + s));
+    }
+
     public static void main(String[] args) {
-        String base = "C:\\myFiles\\data\\access7\\HRSTools\\data\\base.csv";
-        String vod_1 = "C:\\myFiles\\data\\access7\\HRSTools\\data\\ELRA_POST_1-9-2023.csv";
-        String vod_2 = "C:\\myFiles\\data\\access7\\HRSTools\\data\\SB_HRS_September_2023.csv";
+        String base = "C:\\myFiles\\data\\HRSTools\\data\\base.csv";
+        String vod_1 = "C:\\myFiles\\data\\HRSTools\\data\\ELRA_POST_1-9-2023.csv";
+        String vod_2 = "C:\\myFiles\\data\\HRSTools\\data\\SB_HRS_September_2023.csv";
         FileComparator myFileComparator = new FileComparator(base, 1, vod_1, 1, vod_2, 1, StandardCharsets.UTF_8);
         try {
-
-            List<String> myInvalidRows = myFileComparator.getInvalidBaseRows();
-            Map<String, List<String>> hrsOnly = myFileComparator.baseOnly();
-            Map<String, List<String>> VOD_ELRA_POST_only = myFileComparator.ELRA_POST_only();
-            Map<String, List<String>> VOD_ESB_HRS_only = myFileComparator.ESB_HRS_only();
-            //---
-            System.out.println();
-            System.out.println("*************** SUMMARY ***********");
-            System.out.println("INVALID Numbers found: " + myInvalidRows.size());
-            System.out.println("Numbers that exist ONLY in HRS (not in Vodafone), found: " + myInvalidRows.size());
-            System.out.println("Reasons for  Numbers that exist ONLY in HRS database (not in Vodafone):");
-            Map<String, Long> res1 = hrsOnly.values().stream().flatMap(v -> v.stream()).collect(Collectors.groupingBy(s -> s.split(";")[2] + ":" + s.split(";")[3], Collectors.counting()));
-            res1.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-                System.out.println("        " + e.getValue() + " numbers found for reason " + e.getKey());
-            });
-            System.out.println("Numbers that exist ONLY in VOD_ELRA_POST (not in Atlantis), found: " + VOD_ELRA_POST_only.size());            
-            System.out.println("Numbers that exist ONLY in VOD_ESB_HRS (not in Atlanis), found: " + VOD_ESB_HRS_only.size());
-            //-------------------------------------------------
-            System.out.println();
-            System.out.println("***************************************************************");
-            System.out.println("\n\n\n*** DETAILS ***");
-            //-------------
-            System.out.println("*** Invalid Numbers ***");
-            myInvalidRows.stream().filter(s -> !s.contains(";;;"))
-                    .forEach(s -> System.out.println("  invalid number: " + s));
-            //---------
-            System.out.println("\n\n*** Numbers that exist ONLY in HRS (not found in Vodafone) ***");
-            hrsOnly.values().stream().flatMap(v -> v.stream()).sorted(Comparator.comparing(s -> s.split(";")[2])).forEach(s -> {
-                System.out.println("  ONLY in HRS: " + s.split(";")[1] + " : " + s);
-            });
-            //----------
-            System.out.println("\n\n*** Numbers that exist ONLY in VOD_ELRA_POST (not in Atlantis): " + VOD_ELRA_POST_only.size());
-            VOD_ELRA_POST_only.values().stream().flatMap(v -> v.stream()).forEach(s -> System.out.println(" VOD_ELRA_POST_only-> "+s.split(";")[1]+ " : " + s));
-            System.out.println("\n\n*** Numbers that exist ONLY in VOD_ESB_HRS (not in Atlanis): " + VOD_ESB_HRS_only.size());
-            VOD_ESB_HRS_only.values().stream().flatMap(v -> v.stream()).forEach(s -> System.out.println(" VOD_ESB_HRS_only-> "+s.split(";")[1] +" :"+  s));
+            myFileComparator.loadFiles();
+            myFileComparator.report();
         } catch (IOException ex) {
             Logger.getLogger(FileComparator.class.getName()).log(Level.SEVERE, null, ex);
         }
