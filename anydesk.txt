@@ -1,0 +1,7 @@
+Server name :  ShipServer01
+Ip :  192.168.1.233
+User: Administrator
+Password: HRSSA123$
+Anydesk
+387780590
+AnyHRSSA123$
