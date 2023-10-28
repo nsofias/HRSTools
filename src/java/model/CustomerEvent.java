@@ -4,6 +4,8 @@
  */
 package model;
 
+import java.util.Objects;
+
 /**
  *
  * @author nsofias
@@ -20,6 +22,41 @@ public class CustomerEvent {
         this.info = info;
         this.activationDate = activationDate;
         this.status = status;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + Objects.hashCode(this.MSISDN);
+        hash = 89 * hash + Objects.hashCode(this.activationDate);
+        hash = 89 * hash + Objects.hashCode(this.status);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CustomerEvent other = (CustomerEvent) obj;
+        if (!Objects.equals(this.MSISDN, other.MSISDN)) {
+            return false;
+        }
+        if (!Objects.equals(this.activationDate, other.activationDate)) {
+            return false;
+        }
+        return Objects.equals(this.status, other.status);
+    }
+
+    @Override
+    public String toString() {
+        return "CustomerEvent{" + "MSISDN=" + MSISDN + ", activationDate=" + activationDate + ", status=" + status + ", info=" + info  + '}';
     }
 
     /**
