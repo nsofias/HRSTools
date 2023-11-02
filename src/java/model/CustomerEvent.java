@@ -12,13 +12,22 @@ import java.util.Objects;
  */
 public class CustomerEvent {
 
+    /**
+     * @return the O000xxx
+     */
+    public String getO000xxx() {
+        return O000xxx;
+    }
+
     private final String MSISDN;
+    private final String O000xxx;
     private String info;
     private String activationDate;
     private String status;
 
-    public CustomerEvent(String MSISDN, String activationDate, String status, String info) {
+    public CustomerEvent(String MSISDN,String O000xxx, String activationDate, String status, String info) {
         this.MSISDN = MSISDN;
+        this.O000xxx = O000xxx;
         this.info = info;
         this.activationDate = activationDate;
         this.status = status;
@@ -56,8 +65,9 @@ public class CustomerEvent {
 
     @Override
     public String toString() {
-        return "CustomerEvent{" + "MSISDN=" + MSISDN + ", activationDate=" + activationDate + ", status=" + status + ", info=" + info  + '}';
+        return "CustomerEvent{" + "MSISDN=" + MSISDN + ", O000xxx=" + O000xxx + ", info=" + info + ", activationDate=" + activationDate + ", status=" + status + '}';
     }
+
 
     /**
      * @return the MSISDN

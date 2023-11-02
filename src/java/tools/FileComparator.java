@@ -25,22 +25,25 @@ import model.CustomerEvent;
  * @author nsofias
  */
 public class FileComparator {
-    Map<String,String> statuses = new HashMap();
-    Charset charset = StandardCharsets.ISO_8859_1;
+
+    Map<String, String> statuses = new HashMap();
+    Charset charset = StandardCharsets.UTF_8;
+    String splitter = "\t";
     String max_activationDate = "20230930T000000";
     //
-    String HRS_BASE_filename;
+    String HRS_BASE_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\HRS_BASE.txt";
     int HRS_BASE_index = 1;
-    int HRS_BASE_activationDate_index = 6;
-    int HRS_BASE_status_index = 5;
+    int HRS_BASE_activationDate_index = 10;
+    int HRS_BASE_status_index = 9;
+    int O000xxx_index = 5;
     List ignoreList = Arrays.asList("13", "6", "69", "72", "23", "75", "57", "4", "33", "24", "20", "19", "76");
     //
-    String ELRA_POST_filename;
+    String ELRA_POST_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE ELRA_MOB.txt";
     int ELRA_POST_index = 1;
     int ELRA_POST_activationDate_index = 4;
     int ELRA_POST_status_index = 5;
     //
-    String SB_HRS_filename;
+    String SB_HRS_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE SB_HRS.txt";
     int SB_HRS_index = 1;
     int SB_HRS_activationDate_index = 3;
     //
@@ -51,17 +54,11 @@ public class FileComparator {
     private Map<String, List<CustomerEvent>> ELRA_POST_Lines;
     private Map<String, List<CustomerEvent>> SB_HRS_Lines;
 
-    public FileComparator(String base, int base_index, String ELRA_POST, int ELRA_POST_index, String SB_HRS, int SB_HRS_index, Charset charset) {
-        this.HRS_BASE_filename = base;
-        this.HRS_BASE_index = base_index;
-        this.ELRA_POST_filename = ELRA_POST;
-        this.ELRA_POST_index = ELRA_POST_index;
-        this.SB_HRS_filename = SB_HRS;
-        this.SB_HRS_index = SB_HRS_index;
-        this.charset = charset;
+    public FileComparator() {
+        this.charset = StandardCharsets.UTF_8;
         try {
             List<String> lines = Files.readAllLines(Paths.get("C:\\myfiles\\data\\HRSTools\\statuses.txt"), StandardCharsets.UTF_8);
-            lines.forEach(l->statuses.put(l.split(";")[0],l.split(";")[1]));
+            lines.forEach(l -> statuses.put(l.split(";")[0], l.split(";")[1]));
             System.out.println(statuses);
         } catch (IOException ex) {
             Logger.getLogger(FileComparator.class.getName()).log(Level.SEVERE, null, ex);
@@ -72,32 +69,34 @@ public class FileComparator {
         base_Lines = Files.readAllLines(Paths.get(HRS_BASE_filename), charset)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(";").length > HRS_BASE_index ? s.split(";")[HRS_BASE_index] : "";
-                    String activationDate = s.split(";").length > HRS_BASE_activationDate_index ? s.split(";")[HRS_BASE_activationDate_index] : "";
-                    String status = s.split(";").length > HRS_BASE_status_index ? s.split(";")[HRS_BASE_status_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), status, s);
+                    //System.out.println("s.split(splitter).length="+s.split(splitter).length);
+                    String msisdn = s.split(splitter).length > HRS_BASE_index ? s.split(splitter)[HRS_BASE_index] : "";
+                    String O000xxx = s.split(splitter).length > O000xxx_index ? s.split(splitter)[O000xxx_index] : "";
+                    String activationDate = s.split(splitter).length > HRS_BASE_activationDate_index ? s.split(splitter)[HRS_BASE_activationDate_index] : "";
+                    String status = s.split(splitter).length > HRS_BASE_status_index ? s.split(splitter)[HRS_BASE_status_index] : "";
+                    return new CustomerEvent(msisdn, O000xxx, formatDate(activationDate), status, s);
                 })
                 .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
         ELRA_POST_Lines = Files.readAllLines(Paths.get(ELRA_POST_filename), charset)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(";").length > ELRA_POST_index ? s.split(";")[ELRA_POST_index] : "";
-                    String activationDate = s.split(";").length > ELRA_POST_activationDate_index ? s.split(";")[ELRA_POST_activationDate_index] : "";
-                    String status = s.split(";").length > ELRA_POST_status_index ? s.split(";")[ELRA_POST_status_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), status, s);
+                    String msisdn = s.split(splitter).length > ELRA_POST_index ? s.split(splitter)[ELRA_POST_index] : "";
+                    String activationDate = s.split(splitter).length > ELRA_POST_activationDate_index ? s.split(splitter)[ELRA_POST_activationDate_index] : "";
+                    String status = s.split(splitter).length > ELRA_POST_status_index ? s.split(splitter)[ELRA_POST_status_index] : "";
+                    return new CustomerEvent(msisdn, "", formatDate(activationDate), status, s);
                 })
-                .filter(validRow).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
         SB_HRS_Lines = Files.readAllLines(Paths.get(SB_HRS_filename), charset)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(";").length > SB_HRS_index ? s.split(";")[SB_HRS_index] : "";
-                    String activationDate = s.split(";").length > SB_HRS_activationDate_index ? s.split(";")[SB_HRS_activationDate_index] : "";
-                    //String status = s.split(";").length > SB_HRS_status_index ? s.split(";")[SB_HRS_status_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s);
+                    String msisdn = s.split(splitter).length > SB_HRS_index ? s.split(splitter)[SB_HRS_index] : "";
+                    String activationDate = s.split(splitter).length > SB_HRS_activationDate_index ? s.split(splitter)[SB_HRS_activationDate_index] : "";
+                    //String status = s.split(splitter).length > SB_HRS_status_index ? s.split(splitter)[SB_HRS_status_index] : "";
+                    return new CustomerEvent(msisdn, "", formatDate(activationDate), "", s);
                 })
-                .filter(validRow).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .collect(Collectors.groupingBy(l -> l.getMSISDN()));
     }
 
 
@@ -122,15 +121,18 @@ public class FileComparator {
         return getBase_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
-                .filter(e -> !ELRA_POST_Lines.containsKey(e.getMSISDN()) && !SB_HRS_Lines.containsKey(e.getMSISDN()))
+                .filter(e -> !ELRA_POST_Lines.containsKey(e.getMSISDN()) && !SB_HRS_Lines.containsKey(e.getMSISDN())
+                && !ELRA_POST_Lines.containsKey(e.getO000xxx()) && !SB_HRS_Lines.containsKey(e.getO000xxx()))
                 .collect(toSet());
     }
 
     public Set<CustomerEvent> ELRA_POST_only() throws IOException {
+        List<String> o0List = getBase_Lines().values().stream()
+                .flatMap(l -> l.stream()).map(v -> v.getO000xxx()).collect(toList());
         return getELRA_POST_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
-                .filter(e -> !base_Lines.containsKey(e.getMSISDN()))
+                .filter(e -> !base_Lines.containsKey(e.getMSISDN())&& !o0List.contains(e.getMSISDN()))
                 .collect(toSet());
     }
 
@@ -193,7 +195,7 @@ public class FileComparator {
         Map<String, Long> atlantis_statuses = hrsOnly.stream()
                 .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
         atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey()+" - "+statuses.get(e.getKey()));
+            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey() + " - " + statuses.get(e.getKey()));
         });
         System.out.println("\nReasons for Numbers that exist ONLY in VOD_ELRA_POST (not in ATLANTIS), found: " + VOD_ELRA_POST_only.size());
         Map<String, Long> VOD_ELRA_statuses = VOD_ELRA_POST_only.stream()
@@ -251,10 +253,7 @@ public class FileComparator {
     public static void main(String[] args) {
         System.out.println(formatDate("9/5/2014"));
 
-        String base = "C:\\myfiles\\data\\HRSTools\\October_2023\\HRS_BASE.csv";
-        String vod_1 = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE ELRA_MOB.csv";
-        String vod_2 = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE SB_HRS.csv";
-        FileComparator myFileComparator = new FileComparator(base, 1, vod_1, 1, vod_2, 1, StandardCharsets.UTF_8);
+        FileComparator myFileComparator = new FileComparator();
         try {
             myFileComparator.loadFiles();
             myFileComparator.report();
@@ -305,4 +304,4 @@ public class FileComparator {
         1 found. Reason:60(Αναμονή data)
         1 found. Reason:17(Καρτοσυμβ. Νέα Γραμμη)
         1 found. Reason:61(Αναμονή νέας σύνδεσης κιν)
-*/
+ */
