@@ -11,22 +11,16 @@ import java.util.Objects;
  * @author nsofias
  */
 public class CustomerEvent {
-
-    /**
-     * @return the O000xxx
-     */
-    public String getO000xxx() {
-        return O000xxx;
-    }
-
     private final String MSISDN;
     private final String O000xxx;
+    private final String secondMSISDN;
     private String info;
     private String activationDate;
     private String status;
 
-    public CustomerEvent(String MSISDN,String O000xxx, String activationDate, String status, String info) {
+    public CustomerEvent(String MSISDN,String secondMSISDN,String O000xxx, String activationDate, String status, String info) {
         this.MSISDN = MSISDN;
+        this.secondMSISDN = secondMSISDN;
         this.O000xxx = O000xxx;
         this.info = info;
         this.activationDate = activationDate;
@@ -116,6 +110,20 @@ public class CustomerEvent {
      */
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    /**
+     * @return the secondMSISDN
+     */
+    public String getSecondMSISDN() {
+        return secondMSISDN;
+    }
+
+    /**
+     * @return the O000xxx
+     */
+    public String getO000xxx() {
+        return O000xxx;
     }
 
 }

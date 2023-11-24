@@ -31,19 +31,20 @@ public class FileComparator {
     String splitter = "\t";
     String max_activationDate = "20230930T000000";
     //
-    String HRS_BASE_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\HRS_BASE.txt";
+    String HRS_BASE_filename = "C:\\myfiles\\data\\HRSTools\\data\\October_2023\\HRS_BASE.txt";
     int HRS_BASE_index = 1;
+    int HRS_BASE_secondMSISDN_index = 4;
     int HRS_BASE_activationDate_index = 10;
     int HRS_BASE_status_index = 9;
     int O000xxx_index = 5;
     List ignoreList = Arrays.asList("13", "6", "69", "72", "23", "75", "57", "4", "33", "24", "20", "19", "76");
     //
-    String ELRA_POST_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE ELRA_MOB.txt";
+    String ELRA_POST_filename = "C:\\myfiles\\data\\HRSTools\\data\\October_2023\\VODAFONE ELRA_MOB.txt";
     int ELRA_POST_index = 1;
     int ELRA_POST_activationDate_index = 4;
     int ELRA_POST_status_index = 5;
     //
-    String SB_HRS_filename = "C:\\myfiles\\data\\HRSTools\\October_2023\\VODAFONE SB_HRS.txt";
+    String SB_HRS_filename = "C:\\myfiles\\data\\HRSTools\\data\\October_2023\\VODAFONE SB_HRS.txt";
     int SB_HRS_index = 1;
     int SB_HRS_activationDate_index = 3;
     //
@@ -71,10 +72,11 @@ public class FileComparator {
                 .map(s -> {
                     //System.out.println("s.split(splitter).length="+s.split(splitter).length);
                     String msisdn = s.split(splitter).length > HRS_BASE_index ? s.split(splitter)[HRS_BASE_index] : "";
+                    String HRS_BASE_secondMSISDN = s.split(splitter).length > HRS_BASE_secondMSISDN_index ? s.split(splitter)[HRS_BASE_secondMSISDN_index] : "";
                     String O000xxx = s.split(splitter).length > O000xxx_index ? s.split(splitter)[O000xxx_index] : "";
                     String activationDate = s.split(splitter).length > HRS_BASE_activationDate_index ? s.split(splitter)[HRS_BASE_activationDate_index] : "";
                     String status = s.split(splitter).length > HRS_BASE_status_index ? s.split(splitter)[HRS_BASE_status_index] : "";
-                    return new CustomerEvent(msisdn, O000xxx, formatDate(activationDate), status, s);
+                    return new CustomerEvent(msisdn, HRS_BASE_secondMSISDN, O000xxx, formatDate(activationDate), status, s);
                 })
                 .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
@@ -84,7 +86,7 @@ public class FileComparator {
                     String msisdn = s.split(splitter).length > ELRA_POST_index ? s.split(splitter)[ELRA_POST_index] : "";
                     String activationDate = s.split(splitter).length > ELRA_POST_activationDate_index ? s.split(splitter)[ELRA_POST_activationDate_index] : "";
                     String status = s.split(splitter).length > ELRA_POST_status_index ? s.split(splitter)[ELRA_POST_status_index] : "";
-                    return new CustomerEvent(msisdn, "", formatDate(activationDate), status, s);
+                    return new CustomerEvent(msisdn, "", "", formatDate(activationDate), status, s);
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
@@ -94,7 +96,7 @@ public class FileComparator {
                     String msisdn = s.split(splitter).length > SB_HRS_index ? s.split(splitter)[SB_HRS_index] : "";
                     String activationDate = s.split(splitter).length > SB_HRS_activationDate_index ? s.split(splitter)[SB_HRS_activationDate_index] : "";
                     //String status = s.split(splitter).length > SB_HRS_status_index ? s.split(splitter)[SB_HRS_status_index] : "";
-                    return new CustomerEvent(msisdn, "", formatDate(activationDate), "", s);
+                    return new CustomerEvent(msisdn, "", "", formatDate(activationDate), "", s);
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
     }
@@ -129,18 +131,22 @@ public class FileComparator {
     public Set<CustomerEvent> ELRA_POST_only() throws IOException {
         List<String> o0List = getBase_Lines().values().stream()
                 .flatMap(l -> l.stream()).map(v -> v.getO000xxx()).collect(toList());
+        List<String> secondMSISDNList = getBase_Lines().values().stream()
+                .flatMap(l -> l.stream()).map(v -> v.getSecondMSISDN()).collect(toList());
         return getELRA_POST_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
-                .filter(e -> !base_Lines.containsKey(e.getMSISDN())&& !o0List.contains(e.getMSISDN()))
+                .filter(e -> !base_Lines.containsKey(e.getMSISDN()) && !o0List.contains(e.getMSISDN())&& !secondMSISDNList.contains(e.getMSISDN()))
                 .collect(toSet());
     }
 
     public List<CustomerEvent> ESB_HRS_only() throws IOException {
+        List<String> secondMSISDNList = getBase_Lines().values().stream()
+                .flatMap(l -> l.stream()).map(v -> v.getSecondMSISDN()).collect(toList());
         return getSB_HRS_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
-                .filter(e -> !base_Lines.containsKey(e.getMSISDN()))
+                .filter(e -> !base_Lines.containsKey(e.getMSISDN())&& !secondMSISDNList.contains(e.getMSISDN()))
                 .collect(toList());
     }
 
