@@ -59,7 +59,7 @@ public class CustomerEvent {
 
     @Override
     public String toString() {
-        return "CustomerEvent{" + "MSISDN=" + MSISDN + ", O000xxx=" + O000xxx + ", info=" + info + ", activationDate=" + activationDate + ", status=" + status + '}';
+        return info;
     }
 
 
