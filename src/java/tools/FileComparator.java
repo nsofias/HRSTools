@@ -76,7 +76,7 @@ public class FileComparator {
                     String O000xxx = s.split(splitter).length > O000xxx_index ? s.split(splitter)[O000xxx_index] : "";
                     String activationDate = s.split(splitter).length > HRS_BASE_activationDate_index ? s.split(splitter)[HRS_BASE_activationDate_index] : "";
                     String status = s.split(splitter).length > HRS_BASE_status_index ? s.split(splitter)[HRS_BASE_status_index] : "";
-                    return new CustomerEvent(msisdn, HRS_BASE_secondMSISDN, O000xxx, formatDate(activationDate), status, s);
+                    return new CustomerEvent(msisdn,  formatDate(activationDate), status, s);
                 })
                 .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
@@ -86,7 +86,7 @@ public class FileComparator {
                     String msisdn = s.split(splitter).length > ELRA_POST_index ? s.split(splitter)[ELRA_POST_index] : "";
                     String activationDate = s.split(splitter).length > ELRA_POST_activationDate_index ? s.split(splitter)[ELRA_POST_activationDate_index] : "";
                     String status = s.split(splitter).length > ELRA_POST_status_index ? s.split(splitter)[ELRA_POST_status_index] : "";
-                    return new CustomerEvent(msisdn, "", "", formatDate(activationDate), status, s);
+                    return new CustomerEvent(msisdn,  formatDate(activationDate), status, s);
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         //---
@@ -96,7 +96,7 @@ public class FileComparator {
                     String msisdn = s.split(splitter).length > SB_HRS_index ? s.split(splitter)[SB_HRS_index] : "";
                     String activationDate = s.split(splitter).length > SB_HRS_activationDate_index ? s.split(splitter)[SB_HRS_activationDate_index] : "";
                     //String status = s.split(splitter).length > SB_HRS_status_index ? s.split(splitter)[SB_HRS_status_index] : "";
-                    return new CustomerEvent(msisdn, "", "", formatDate(activationDate), "", s);
+                    return new CustomerEvent(msisdn,  formatDate(activationDate), "", s);
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
     }
@@ -124,15 +124,15 @@ public class FileComparator {
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
                 .filter(e -> !ELRA_POST_Lines.containsKey(e.getMSISDN()) && !SB_HRS_Lines.containsKey(e.getMSISDN())
-                && !ELRA_POST_Lines.containsKey(e.getO000xxx()) && !SB_HRS_Lines.containsKey(e.getO000xxx()))
+                && !ELRA_POST_Lines.containsKey(e.getMSISDN()) && !SB_HRS_Lines.containsKey(e.getMSISDN()))
                 .collect(toSet());
     }
 
     public Set<CustomerEvent> ELRA_POST_only() throws IOException {
         List<String> o0List = getBase_Lines().values().stream()
-                .flatMap(l -> l.stream()).map(v -> v.getO000xxx()).collect(toList());
+                .flatMap(l -> l.stream()).map(v -> v.getMSISDN()).collect(toList());
         List<String> secondMSISDNList = getBase_Lines().values().stream()
-                .flatMap(l -> l.stream()).map(v -> v.getSecondMSISDN()).collect(toList());
+                .flatMap(l -> l.stream()).map(v -> v.getMSISDN()).collect(toList());
         return getELRA_POST_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
@@ -142,7 +142,7 @@ public class FileComparator {
 
     public List<CustomerEvent> ESB_HRS_only() throws IOException {
         List<String> secondMSISDNList = getBase_Lines().values().stream()
-                .flatMap(l -> l.stream()).map(v -> v.getSecondMSISDN()).collect(toList());
+                .flatMap(l -> l.stream()).map(v -> v.getMSISDN()).collect(toList());
         return getSB_HRS_Lines().values().stream()
                 .flatMap(l -> l.stream())
                 .filter(activationDateFilter)
