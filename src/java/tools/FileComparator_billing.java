@@ -11,6 +11,7 @@ import static java.util.Comparator.comparing;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -25,62 +26,94 @@ import model.CustomerEvent;
  */
 public class FileComparator_billing {
 
-    Map<String, String> statuses = new HashMap();
-    Charset charset = Charset.forName("ISO-8859-7");//StandardCharsets.ISO_8859_1;
-    String splitter = ";";
-    String max_activationDate = "20231030T000000";
-    //
+    Properties myProperties;
 
-    List ignoreList = Arrays.asList("13", "6", "69", "72", "23", "75", "57", "4", "33", "24", "20", "19", "76");
+    public static String FileComparator_CHARSET = "CHARSET";
+    public static String FileComparator_SPLITTER = "SPLITTER";
+    public static String FileComparator_MAX_ACTIVATION_DATE = "MAX_ACTIVATION_DATE";
+    //
+    public static String FileComparator_IGNORE_LIST = "IGNORE_LIST";
+    //------------------ HRS files ------------------------
+    public static String FileComparator_ATLANTIS_filename = "ATLANTIS_filename";
+    public static String FileComparator_ATLANTIS_MSISDN_index = "ATLANTIS_MSISDN_index";
+    public static String FileComparator_ATLANTIS_MSISDN2_index = "ATLANTIS_MSISDN2_index";
+    public static String FileComparator_ATLANTIS_DATE_index = "ATLANTIS_DATE_index";
+    public static String FileComparator_ATLANTIS_STATUS_index = "ATLANTIS_STATUS_index";
+    //-------------------------- Vodafon files ----------------------------------------------
+    public static String FileComparator_SB_HRS_filename = "SB_HRS_filename";
+    public static String FileComparator_SB_HRS_MSISDN_index = "SB_HRS_MSISDN_index";
+    public static String FileComparator_SB_HRS_DATE_index = "SB_HRS_DATE_index";
+    //
+    public static String FileComparator_ELRA_filename = "ELRA_filename";
+    public static String FileComparator_ELRA_MSISDN_index = "ELRA_MSISDN_index";
+    public static String FileComparator_ELRA_DATE_index = "ELRA_DATE_index";
+    //
+    public static String FileComparator_ELRA_PREPAY_filename = "ELRA_PREPAY_filename";
+    public static String FileComparator_ELRA_PREPAY_MSISDN_index = "ELRA_PREPAY_MSISDN_index";
+    public static String FileComparator_ELRA_PREPAY_DATE_index = "ELRA_PREPAY_DATE_index";
+    //
+    public static String FileComparator_VODAFONE_SPLIT_filename = "VODAFONE_SPLIT_filename";
+    public static String FileComparator_VODAFONE_SPLIT_MSISDN_index = "VODAFONE_SPLIT_MSISDN_index";
+    //
+    public static String FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename = "VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename";
+    public static String FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index = "VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index";
+    //
+    public static String FileComparator_VODAFONE_ΚΙΝΗΤΗ_filename = "VODAFONE_ΚΙΝΗΤΗ_filename";
+    public static String FileComparator_VODAFONE_ΚΙΝΗΤΗ_MSISDN_index = "VODAFONE_ΚΙΝΗΤΗ_MSISDN_index";
+    //
+    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_filename = "VODAFONE_ΣΤΑΘΕΡΗ_filename";
+    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index = "VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index";
+    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index = "VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index";
+    //-------
+    private Map<String, List<CustomerEvent>> VODAFONE_BILLING_Lines = new HashMap();
+    private Map<String, List<CustomerEvent>> VODAFONE_DB_Lines = new HashMap();
+    Map<String, String> statuses = new HashMap();
+    //-----------------------
+    Charset CHARSET = Charset.forName("ISO-8859-7");//StandardCharsets.ISO_8859_1;
+    String SPLITTER = ";";
+    String MAX_ACTIVATION_DATE = "20231030T000000";
+    //
+    List IGNORE_LIST = Arrays.asList("13", "6", "69", "72", "23", "75", "57", "4", "33", "24", "20", "19", "76");
     //------------------ HRS files ------------------------
     String ATLANTIS_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΒΑΣΗ HRS ATLANTIS.csv";
     int ATLANTIS_MSISDN_index = 3;
     int ATLANTIS_MSISDN2_index = 6;
     int ATLANTIS_DATE_index = 11;
     int ATLANTIS_STATUS_index = 10;
-    private Map<String, List<CustomerEvent>> ATLANTIS_lines = new HashMap();
-    //
-    String SB_HRS_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\SB_HRS_November_2023 new.csv";
-    int SB_HRS_MSISDN_index = 3;
-    int SB_HRS_DATE_index = 5;
-    private Map<String, List<CustomerEvent>> SB_HRS_lines = new HashMap();
-    ;
-    //
-    String elra_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra.csv";
-    int elra_MSISDN_index = 1;
-    int elra_DATE_index = 4;
-    private Map<String, List<CustomerEvent>> elra_lines;
-    //
-    String elra_Prepay_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra_Prepay.csv";
-    int elra_Prepay_MSISDN_index = 5;
-    int elra_Prepay_DATE_index = 3;
-    private Map<String, List<CustomerEvent>> elra_Prepay_lines = new HashMap();
     //-------------------------- Vodafon files ----------------------------------------------
-    String VODAFONE_SPLIT_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ SPLIT VODAFONE.csv";
-    int VODAFONE_SPLIT_MSISDN_index = 3;
-    private Map<String, List<CustomerEvent>> VODAFONE_SPLIT_Lines = new HashMap();
+    String SB_HRS_filename ;
+    int SB_HRS_MSISDN_index;
+    int SB_HRS_DATE_index ;
     //
-    String VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΑΡΤΟΚΙΝΗΤΗ VODAFONE.csv";
-    int VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index = 3;
-    private Map<String, List<CustomerEvent>> VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = new HashMap();
+    String ELRA_filename ;
+    int ELRA_MSISDN_index ;
+    int ELRA_DATE_index ;
     //
-    String VODAFONE_ΚΙΝΗΤΗ_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΙΝΗΤΗ VODAFONE.csv";
-    int VODAFONE_ΚΙΝΗΤΗ_MSISDN_index = 3;
-    private Map<String, List<CustomerEvent>> VODAFONE_ΚΙΝΗΤΗ_Lines = new HashMap();
+    String ELRA_PREPAY_filename; 
+    int ELRA_PREPAY_MSISDN_index;
+    int ELRA_PREPAY_DATE_index;
     //
-    String VODAFONE_ΣΤΑΘΕΡΗ_filename = "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΣΤΑΘΕΡΗ VODAFONE.csv";
-    int VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index = 3;
-    int VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index = 6;
-    private Map<String, List<CustomerEvent>> VODAFONE_ΣΤΑΘΕΡΗ_Lines = new HashMap();
+    String VODAFONE_SPLIT_filename;
+    int VODAFONE_SPLIT_MSISDN_index;
     //
-    private Map<String, List<CustomerEvent>> VODAFONE_ALL_Lines = new HashMap();
+    String VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename;
+    int VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index ;
+    //
+    String VODAFONE_ΚΙΝΗΤΗ_filename ;
+    int VODAFONE_ΚΙΝΗΤΗ_MSISDN_index ;
+    //
+    String VODAFONE_ΣΤΑΘΕΡΗ_filename;
+    int VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index ;
+    int VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index;
+    //
     private Map<String, List<CustomerEvent>> HRS_ALL_Lines = new HashMap();
     //
     Predicate<CustomerEvent> validRow = s -> isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
     Predicate<CustomerEvent> invalidRow = s -> !(isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty());
-    Predicate<CustomerEvent> activationDateFilter = s -> s.getActivationDate().compareTo(max_activationDate) < 0;
+    Predicate<CustomerEvent> activationDateFilter = s -> !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
 
-    public FileComparator_billing() {
+    //#############################################################################################
+    public FileComparator_billing(Properties myProperties) {
         try {
             List<String> lines = Files.readAllLines(Paths.get("C:\\myfiles\\data\\HRSTools\\statuses.csv"), StandardCharsets.UTF_8);
             lines.forEach(l -> statuses.put(l.split(";")[0], l.split(";")[1]));
@@ -88,143 +121,188 @@ public class FileComparator_billing {
         } catch (IOException ex) {
             Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        CHARSET = Charset.forName(myProperties.getProperty("CHARSET"));
+        SPLITTER = myProperties.getProperty("SPLITTER");
+        MAX_ACTIVATION_DATE = myProperties.getProperty("MAX_ACTIVATION_DATE");
+        //
+        IGNORE_LIST = Arrays.asList(myProperties.getProperty("IGNORE_LIST").split(","));
+        System.out.println("IGNORE_LIST=" + IGNORE_LIST);
+        //------------------ HRS files ------------------------
+        ATLANTIS_filename = myProperties.getProperty("ATLANTIS_filename");
+        ATLANTIS_MSISDN_index = Integer.parseInt(myProperties.getProperty("ATLANTIS_MSISDN_index"));
+        ATLANTIS_MSISDN2_index = Integer.parseInt(myProperties.getProperty("ATLANTIS_MSISDN2_index"));
+        ATLANTIS_DATE_index = Integer.parseInt(myProperties.getProperty("ATLANTIS_DATE_index"));
+        ATLANTIS_STATUS_index = Integer.parseInt(myProperties.getProperty("ATLANTIS_STATUS_index"));
+        //-------------------------- Vodafon files ----------------------------------------------
+        SB_HRS_filename = myProperties.getProperty("SB_HRS_filename");
+        SB_HRS_MSISDN_index = Integer.parseInt(myProperties.getProperty("SB_HRS_MSISDN_index"));
+        SB_HRS_DATE_index = Integer.parseInt(myProperties.getProperty("SB_HRS_DATE_index"));
+        //
+        ELRA_filename = myProperties.getProperty("ELRA_filename");
+        ELRA_MSISDN_index = Integer.parseInt(myProperties.getProperty("ELRA_MSISDN_index"));
+        ELRA_DATE_index = Integer.parseInt(myProperties.getProperty("ELRA_DATE_index"));
+        //
+        ELRA_PREPAY_filename = myProperties.getProperty("ELRA_PREPAY_filename");
+        ELRA_PREPAY_MSISDN_index = Integer.parseInt(myProperties.getProperty("ELRA_PREPAY_MSISDN_index"));
+        ELRA_PREPAY_DATE_index = Integer.parseInt(myProperties.getProperty("ELRA_PREPAY_DATE_index"));
+        //
+        VODAFONE_SPLIT_filename = myProperties.getProperty("VODAFONE_SPLIT_filename");
+        VODAFONE_SPLIT_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index"));
+        //
+        VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename = myProperties.getProperty("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename");
+        VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index"));
+        //
+        VODAFONE_ΚΙΝΗΤΗ_filename = myProperties.getProperty("VODAFONE_ΚΙΝΗΤΗ_filename");
+        VODAFONE_ΚΙΝΗΤΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΚΙΝΗΤΗ_MSISDN_index"));
+        //
+        VODAFONE_ΣΤΑΘΕΡΗ_filename = myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_filename");
+        VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index"));
+        VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index"));
     }
 
     public void loadFiles() throws IOException {
-
-        ATLANTIS_lines = Files.readAllLines(Paths.get(ATLANTIS_filename), charset)
+        //************************ HRS lines ***************************************************** 
+        System.out.println("------------- HRS (Atlantis) lines -------------------");
+        Map<String, List<CustomerEvent>> ATLANTIS_lines = Files.readAllLines(Paths.get(ATLANTIS_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(splitter).length > ATLANTIS_MSISDN_index ? s.split(splitter)[ATLANTIS_MSISDN_index] : "";
-                    String activationDate = s.split(splitter).length > ATLANTIS_DATE_index ? s.split(splitter)[ATLANTIS_DATE_index] : "";
+                    String msisdn = s.split(SPLITTER).length > ATLANTIS_MSISDN_index ? s.split(SPLITTER)[ATLANTIS_MSISDN_index] : "";
+                    String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     //System.out.println("-> activationDate=" + activationDate+" S="+s);
-                    String status = ATLANTIS_STATUS_index >= 0 && s.split(splitter).length > ATLANTIS_STATUS_index ? s.split(splitter)[ATLANTIS_STATUS_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), status, s + " file: ATLANTIS_lines");
+                    String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
+                    return new CustomerEvent(msisdn, formatDate(activationDate), status, s + " ATLANTIS");
                 })
-                .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("ATLANTIS_lines = " + ATLANTIS_lines.size());
         //---
-        Map<String, List<CustomerEvent>> ATLANTIS_2ndlines = Files.readAllLines(Paths.get(ATLANTIS_filename), charset)
+        Map<String, List<CustomerEvent>> ATLANTIS_2ndlines = Files.readAllLines(Paths.get(ATLANTIS_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String secondMSISDN = ATLANTIS_MSISDN2_index >= 0 && s.split(splitter).length > ATLANTIS_MSISDN2_index ? s.split(splitter)[ATLANTIS_MSISDN2_index] : "";
-                    String activationDate = s.split(splitter).length > ATLANTIS_DATE_index ? s.split(splitter)[ATLANTIS_DATE_index] : "";
-                    String status = ATLANTIS_STATUS_index >= 0 && s.split(splitter).length > ATLANTIS_STATUS_index ? s.split(splitter)[ATLANTIS_STATUS_index] : "";
-                    return new CustomerEvent(secondMSISDN, formatDate(activationDate), status, s + " file: ATLANTIS_2ndlines");
+                    String secondMSISDN = ATLANTIS_MSISDN2_index >= 0 && s.split(SPLITTER).length > ATLANTIS_MSISDN2_index ? s.split(SPLITTER)[ATLANTIS_MSISDN2_index] : "";
+                    String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
+                    String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
+                    return new CustomerEvent(secondMSISDN, formatDate(activationDate), status, s + " ATLANTIS_2ndlines");
                 })
-                .filter(validRow).filter(e -> !e.getMSISDN().isEmpty() && !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .filter(validRow).filter(activationDateFilter).filter(e -> !e.getMSISDN().isEmpty() && !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("ATLANTIS_2ndlines = " + ATLANTIS_2ndlines.size());
-        ATLANTIS_lines.putAll(ATLANTIS_2ndlines);
-        System.out.println("ATLANTIS_lines total = " + ATLANTIS_lines.size());
-        //
-        SB_HRS_lines = Files.readAllLines(Paths.get(SB_HRS_filename), charset)
-                .stream()
-                .map(s -> {
-                    String msisdn = s.split(splitter).length > SB_HRS_MSISDN_index ? s.split(splitter)[SB_HRS_MSISDN_index] : "";
-                    String activationDate = s.split(splitter).length > SB_HRS_DATE_index ? s.split(splitter)[SB_HRS_DATE_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " file: SB_HRS_lines");
-                })
-                .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("SB_HRS_lines = " + SB_HRS_lines.size());
-        //
-        elra_Prepay_lines = Files.readAllLines(Paths.get(elra_Prepay_filename), charset)
-                .stream()
-                .map(s -> {
-                    String msisdn = s.split(splitter).length > elra_Prepay_MSISDN_index ? s.split(splitter)[elra_Prepay_MSISDN_index] : "";
-                    String activationDate = s.split(splitter).length > elra_Prepay_DATE_index ? s.split(splitter)[elra_Prepay_DATE_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " file: elra_Prepay_lines");
-                })
-                .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("elra_Prepay_lines = " + elra_Prepay_lines.size());
-        //
-        elra_lines = Files.readAllLines(Paths.get(elra_filename), charset)
-                .stream()
-                .map(s -> {
-                    String msisdn = s.split(splitter).length > elra_MSISDN_index ? s.split(splitter)[elra_MSISDN_index] : "";
-                    String activationDate = s.split(splitter).length > elra_DATE_index ? s.split(splitter)[elra_DATE_index] : "";
-                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " file: elra_lines");
-                })
-                .filter(validRow).filter(e -> !ignoreList.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("elra_lines = " + elra_lines.size());
-        //        
-  
+        HRS_ALL_Lines.putAll(ATLANTIS_2ndlines);
         HRS_ALL_Lines.putAll(ATLANTIS_lines);
-        System.out.println("HRS_ALL_Lines = " + HRS_ALL_Lines.size());
-        //*****************************************************************************        
-        VODAFONE_SPLIT_Lines = Files.readAllLines(Paths.get(VODAFONE_SPLIT_filename), charset)
+        System.out.println("ATLANTIS_lines total = " + ATLANTIS_lines.size());
+        
+        //
+        //
+        //------------- Vodafon billing files ------------------- 
+        System.out.println("------------- Vodafon billing files -------------------");
+        Map<String, List<CustomerEvent>> VODAFONE_SPLIT_Lines = Files.readAllLines(Paths.get(VODAFONE_SPLIT_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(splitter).length > VODAFONE_SPLIT_MSISDN_index ? s.split(splitter)[VODAFONE_SPLIT_MSISDN_index] : "";
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_SPLIT_MSISDN_index ? s.split(SPLITTER)[VODAFONE_SPLIT_MSISDN_index] : "";
                     //System.out.println("VODAFONE_SPLIT_Lines line="+msisdn);
-                    return new CustomerEvent(msisdn, "", "", s + " file: VODAFONE_SPLIT_Lines");
+                    return new CustomerEvent(msisdn, "", "", s + " VODAFONE_SPLIT");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_SPLIT_Lines = " + VODAFONE_SPLIT_Lines.size());
         //---
-        VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename), charset)
+        Map<String, List<CustomerEvent>> VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(splitter).length > VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index ? s.split(splitter)[VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index] : "";
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index] : "";
                     //System.out.println("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines line="+msisdn);
-                    return new CustomerEvent(msisdn, "", "", s + " file: VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines");
+                    return new CustomerEvent(msisdn, "", "", s + " VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = " + VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines.size());
         //---
-        VODAFONE_ΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΙΝΗΤΗ_filename), charset)
+        Map<String, List<CustomerEvent>> VODAFONE_ΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΙΝΗΤΗ_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(splitter).length > VODAFONE_ΚΙΝΗΤΗ_MSISDN_index ? s.split(splitter)[VODAFONE_ΚΙΝΗΤΗ_MSISDN_index] : "";
-                    return new CustomerEvent(msisdn, "", "", s + " file: VODAFONE_ΚΙΝΗΤΗ_Lines");
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΚΙΝΗΤΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΚΙΝΗΤΗ_MSISDN_index] : "";
+                    return new CustomerEvent(msisdn, "", "", s + " VODAFONE_ΚΙΝΗΤΗ");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_ΚΙΝΗΤΗ_Lines = " + VODAFONE_ΚΙΝΗΤΗ_Lines.size());
         //---
-        VODAFONE_ΣΤΑΘΕΡΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), charset)
+        Map<String, List<CustomerEvent>> VODAFONE_ΣΤΑΘΕΡΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(splitter).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index ? s.split(splitter)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index] : "";
-                    return new CustomerEvent(msisdn, "", "", s + " file: VODAFONE_ΣΤΑΘΕΡΗ_Lines");
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index] : "";
+                    return new CustomerEvent(msisdn, "", "", s + " VODAFONE_ΣΤΑΘΕΡΗ");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_ΣΤΑΘΕΡΗ_Lines = " + VODAFONE_ΣΤΑΘΕΡΗ_Lines.size());
-        Map<String, List<CustomerEvent>> VODAFONE_ΣΤΑΘΕΡΗ_2ndLines = Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), charset)
+        Map<String, List<CustomerEvent>> VODAFONE_ΣΤΑΘΕΡΗ_2ndLines = Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String HRS_BASE_secondMSISDN = s.split(splitter).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index ? s.split(splitter)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index] : "";
-                    return new CustomerEvent(HRS_BASE_secondMSISDN, "", "", s + " file: VODAFONE_ΣΤΑΘΕΡΗ_2ndLines");
+                    String HRS_BASE_secondMSISDN = VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index>=0 && s.split(SPLITTER).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index ? s.split(SPLITTER)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index] : "";
+                    return new CustomerEvent(HRS_BASE_secondMSISDN, "", "", s + " VODAFONE_ΣΤΑΘΕΡΗ_2ndLine");
                 })
                 .filter(e -> !e.getMSISDN().isEmpty())
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_ΣΤΑΘΕΡΗ_2ndLines = " + VODAFONE_ΣΤΑΘΕΡΗ_2ndLines.size());
         VODAFONE_ΣΤΑΘΕΡΗ_Lines.putAll(VODAFONE_ΣΤΑΘΕΡΗ_2ndLines);
         System.out.println("VODAFONE_ΣΤΑΘΕΡΗ_Lines total = " + VODAFONE_ΣΤΑΘΕΡΗ_Lines.size());
-        //--------- billing ---------
-        VODAFONE_ALL_Lines.putAll(VODAFONE_SPLIT_Lines);
-        VODAFONE_ALL_Lines.putAll(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines);
-        VODAFONE_ALL_Lines.putAll(VODAFONE_ΚΙΝΗΤΗ_Lines);
-        VODAFONE_ALL_Lines.putAll(VODAFONE_ΣΤΑΘΕΡΗ_Lines);
-        //--------- databases ------------------------
-        //VODAFONE_ALL_Lines.putAll(SB_HRS_lines);
-        //VODAFONE_ALL_Lines.putAll(elra_Prepay_lines);
-        //VODAFONE_ALL_Lines.putAll(elra_lines);
-        System.out.println("VODAFONE_ALL_Lines = " + VODAFONE_ALL_Lines.size());
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_SPLIT_Lines);
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines);
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΚΙΝΗΤΗ_Lines);
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΣΤΑΘΕΡΗ_Lines);
+        //************************ Vodafone DB lines ***************************************************** 
+        System.out.println("------------- Vodafon DB files -------------------");
+        Map<String, List<CustomerEvent>> SB_HRS_lines = Files.readAllLines(Paths.get(SB_HRS_filename), CHARSET)
+                .stream()
+                .map(s -> {
+                    String msisdn = s.split(SPLITTER).length > SB_HRS_MSISDN_index ? s.split(SPLITTER)[SB_HRS_MSISDN_index] : "";
+                    String activationDate = s.split(SPLITTER).length > SB_HRS_DATE_index ? s.split(SPLITTER)[SB_HRS_DATE_index] : "";
+                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " SB_HRS_lines");
+                })
+                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+        System.out.println("SB_HRS_lines = " + SB_HRS_lines.size());
+        //
+        Map<String, List<CustomerEvent>> elra_Prepay_lines = Files.readAllLines(Paths.get(ELRA_PREPAY_filename), CHARSET)
+                .stream()
+                .map(s -> {
+                    String msisdn = s.split(SPLITTER).length > ELRA_PREPAY_MSISDN_index ? s.split(SPLITTER)[ELRA_PREPAY_MSISDN_index] : "";
+                    String activationDate = s.split(SPLITTER).length > ELRA_PREPAY_DATE_index ? s.split(SPLITTER)[ELRA_PREPAY_DATE_index] : "";
+                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " elra_Prepay_lines");
+                })
+                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+        System.out.println("elra_Prepay_lines = " + elra_Prepay_lines.size());
+        //
+        Map<String, List<CustomerEvent>> elra_lines = Files.readAllLines(Paths.get(ELRA_filename), CHARSET)
+                .stream()
+                .map(s -> {
+                    String msisdn = s.split(SPLITTER).length > ELRA_MSISDN_index ? s.split(SPLITTER)[ELRA_MSISDN_index] : "";
+                    String activationDate = s.split(SPLITTER).length > ELRA_DATE_index ? s.split(SPLITTER)[ELRA_DATE_index] : "";
+                    return new CustomerEvent(msisdn, formatDate(activationDate), "", s + " elra_lines");
+                })
+                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+        System.out.println("elra_lines = " + elra_lines.size());
+        VODAFONE_DB_Lines.putAll(SB_HRS_lines);
+        VODAFONE_DB_Lines.putAll(elra_Prepay_lines);
+        VODAFONE_DB_Lines.putAll(elra_lines);
     }
 
-    public Set<CustomerEvent> HRS_only() throws IOException {
-        return HRS_ALL_Lines.values().stream()
-                .flatMap(l -> l.stream())
-                .filter(activationDateFilter)
-                .filter(e -> !VODAFONE_ALL_Lines.containsKey(e.getMSISDN()))
-                .collect(toSet());
+    public Set<CustomerEvent> HRS_NO_BILLING() throws IOException {
+        return LEFT_only(HRS_ALL_Lines, VODAFONE_BILLING_Lines);
     }
 
-    public Set<CustomerEvent> VODAFON_only() throws IOException {
-        return VODAFONE_ALL_Lines.values().stream()
-                .flatMap(l -> l.stream())
-                .filter(e -> !HRS_ALL_Lines.containsKey(e.getMSISDN()))
-                .collect(toSet());
+    public Set<CustomerEvent> HRS_NO_VODDB() throws IOException {
+        return LEFT_only(HRS_ALL_Lines, VODAFONE_DB_Lines);
+    }
 
+    public Set<CustomerEvent> VODAFON_BILLING_only() throws IOException {
+        return LEFT_only(VODAFONE_BILLING_Lines, HRS_ALL_Lines);
+    }
+
+    public Set<CustomerEvent> VODAFON_DB_only() throws IOException {
+        return LEFT_only(VODAFONE_DB_Lines, HRS_ALL_Lines);
+    }
+
+    public Set<CustomerEvent> LEFT_only(Map<String, List<CustomerEvent>> M1, Map<String, List<CustomerEvent>> M2) throws IOException {
+        return M1.values().stream()
+                .flatMap(l -> l.stream())
+                .filter(e -> !M2.containsKey(e.getMSISDN()))
+                .collect(toSet());
     }
 
     public static boolean isNumeric(String strNum) {
@@ -240,7 +318,7 @@ public class FileComparator_billing {
     }
 
     public Set<CustomerEvent> getInvalidBaseRows() throws IOException {
-        return SB_HRS_lines.values()
+        return HRS_ALL_Lines.values()
                 .stream()
                 .flatMap(l -> l.stream())
                 .filter(invalidRow)
@@ -250,45 +328,63 @@ public class FileComparator_billing {
 
     public void report() throws IOException {
         Set<CustomerEvent> myInvalidRows = getInvalidBaseRows();
-        Set<CustomerEvent> SB_HRS_only = HRS_only();
-        Set<CustomerEvent> VODAFON_only = VODAFON_only();
+        Set<CustomerEvent> HRS_NO_VODDB = HRS_NO_VODDB();
+        Set<CustomerEvent> HRS_NO_BILLING = HRS_NO_BILLING();
+        Set<CustomerEvent> VODAFON_BILLING_only = VODAFON_BILLING_only();
+        Set<CustomerEvent> VODAFON_DB_only = VODAFON_DB_only();
+
         //---
         System.out.println();
         System.out.println("*************** SUMMARY ***********");
-        System.out.println("\nATLANTIS Numbers found: " + SB_HRS_lines.size());
-        System.out.println("\nELRA_POST Numbers found: " + VODAFONE_ALL_Lines.size());
+        System.out.println("IGNORE_LIST:" + IGNORE_LIST);
+        System.out.println("\nHRS records (Atlantis) : " + HRS_ALL_Lines.size());
+        System.out.println("VODAFONE DB records : " + VODAFONE_DB_Lines.size());
+        System.out.println("VODAFONE BILLING records: " + VODAFONE_BILLING_Lines.size());
         //---
-        System.out.println("\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
-        System.out.println("\nNumbers that exist ONLY in ATLANTIS (not in Vodafone), found: " + SB_HRS_only.size());
-        System.out.println("\nReasons for  Numbers that exist ONLY in ATLANTIS database (not in Vodafone): - ignoreList:" + ignoreList);
-        Map<String, Long> atlantis_statuses = SB_HRS_only.stream()
-                .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-        atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey() + " - " + statuses.get(e.getKey()));
-        });
-        System.out.println("\nReasons for Numbers that exist ONLY in VODAFON (not in ATLANTIS), found: " + VODAFON_only.size());
-        Map<String, Long> VOD_ELRA_statuses = VODAFON_only.stream()
-                .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-        VOD_ELRA_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-            System.out.println("        " + e.getValue() + " found. Reason:" + e.getKey());
-        });
-
+        //System.out.println("\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
+        {
+            System.out.println("\n\nNumbers that exist in HRS but not in Vod Billing : " + HRS_NO_BILLING.size());
+            Map<String, Long> statusList = HRS_NO_BILLING.stream()
+                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+                System.out.println("        " + e.getValue() + " - " + statuses.get(e.getKey()));
+            });
+        }
+        //---
+        System.out.println("\nNumbers that exist ONLY in VOD BILLING but not in HRS: " + VODAFON_BILLING_only.size());
+        //---
+        {
+            System.out.println("\nNumbers that exist in HRS but not in Vod DB : " + HRS_NO_VODDB.size());
+            Map<String, Long> statusList = HRS_NO_VODDB.stream()
+                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+                System.out.println("        " + e.getValue() + " - " + statuses.get(e.getKey()));
+            });
+        }
+        //---        
+        System.out.println("\nNumbers that exist ONLY in VOD DB but not in HRS : " + VODAFON_DB_only.size());
+        //-----------
         System.out.println();
         System.out.println("\n\n\n\n***************************************************************");
         System.out.println("*** DETAILS ***");
         System.out.println("***************************************************************");
-        //-------------
-        System.out.println("*** Invalid ATLANTIS rows details ***");
-        myInvalidRows.stream().filter(s -> !s.getInfo().contains(";;;"))
-                .forEach(s -> System.out.println("  invalid number: " + s));
         //---------
-        System.out.println("\n\n*** Numbers that exist ONLY in ATLANTIS (not found in Vodafone), details ***");
-        SB_HRS_only.stream().sorted(Comparator.comparing(s -> s.getStatus())).forEach(s -> {
-            System.out.println("  SB_HRS_ONLY: " + s.getMSISDN() + " : " + s);
-        });
+        System.out.println("\n\n*** Numbers that exist in HRS but not in Vod Billing, details ***");
+        HRS_NO_BILLING.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> System.out.println("  HRS_NO_BILLING: " + s.getMSISDN() + " : " + s));
+        //----------       
+        System.out.println("\n\n*** umbers that exist ONLY in VOD BILLING but not in HRS, details ***");
+        VODAFON_BILLING_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> System.out.println("  VODAFON_BILLING_only-> " + s.getMSISDN() + " : " + s));
         //----------
-        System.out.println("\n\n*** Numbers that exist ONLY in VODAFON (not in ATLANTIS): " + VODAFON_only.size());
-        VODAFON_only.stream().sorted(Comparator.comparing(s -> s.getStatus())).forEach(s -> System.out.println(" VODAFON_only-> " + s.getMSISDN() + " : " + s));
+        System.out.println("\n\n*** Numbers that exist in HRS but not in Vod DB, details ***");
+        HRS_NO_VODDB.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> System.out.println("  HRS_NO_VODDB: " + s.getMSISDN() + " : " + s));
+
+        //----------        
+        System.out.println("\n\n*** Numbers that exist ONLY in VOD DB but not in HRS, details ***");
+        VODAFON_DB_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> System.out.println("  VODAFON_DB_only-> " + s.getMSISDN() + " : " + s));
     }
 
     private static String formatDate(String activationDate) {
@@ -314,8 +410,48 @@ public class FileComparator_billing {
 
     public static void main(String[] args) {
         System.out.println(formatDate("9/5/2014"));
+        Properties myProperties = new Properties();
+        //-----------------------
+        myProperties.put(FileComparator_billing.FileComparator_CHARSET, "ISO-8859-7");//StandardCharsets.ISO_8859_1;
+        myProperties.put(FileComparator_billing.FileComparator_SPLITTER, ";");
+        myProperties.put(FileComparator_billing.FileComparator_MAX_ACTIVATION_DATE, "20231030T000000");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_IGNORE_LIST, "13, 6, 69, 72, 23, 75, 57, 4, 33, 24, 20, 19, 76");
+        //------------------ HRS files ------------------------
+        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΒΑΣΗ HRS ATLANTIS.csv");
+        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_MSISDN_index, "3");
+        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_MSISDN2_index, "6");
+        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_DATE_index, "11");
+        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_STATUS_index, "10");
+        //-------------------------- Vodafon files ----------------------------------------------
+        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\SB_HRS_November_2023 new.csv");
+        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_MSISDN_index, "3");
+        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_DATE_index, "5");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra.csv");
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_MSISDN_index, "1");
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_DATE_index, "4");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra_Prepay.csv");
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_MSISDN_index, "5");
+        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_DATE_index, "3");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_SPLIT_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ SPLIT VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index, "3");
 
-        FileComparator_billing myFileComparator = new FileComparator_billing();
+        //
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΑΡΤΟΚΙΝΗΤΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index, "3");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΙΝΗΤΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΙΝΗΤΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΙΝΗΤΗ_MSISDN_index, "3");
+        //
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΣΤΑΘΕΡΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index, "5");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN2_index, "6");
+        //---------------
+        System.out.println(myProperties);
+        FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
         try {
             myFileComparator.loadFiles();
             myFileComparator.report();
