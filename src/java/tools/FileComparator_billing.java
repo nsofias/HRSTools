@@ -1,5 +1,6 @@
 package tools;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -25,8 +26,6 @@ import model.CustomerEvent;
  * @author nsofias
  */
 public class FileComparator_billing {
-
-    Properties myProperties;
 
     public static String FileComparator_CHARSET = "CHARSET";
     public static String FileComparator_SPLITTER = "SPLITTER";
@@ -55,15 +54,15 @@ public class FileComparator_billing {
     public static String FileComparator_VODAFONE_SPLIT_filename = "VODAFONE_SPLIT_filename";
     public static String FileComparator_VODAFONE_SPLIT_MSISDN_index = "VODAFONE_SPLIT_MSISDN_index";
     //
-    public static String FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename = "VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename";
-    public static String FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index = "VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index";
+    public static String FileComparator_VODAFONE_PREPAY_filename = "VODAFONE_PREPAY_filename";
+    public static String FileComparator_VODAFONE_PREPAY_MSISDN_index = "VODAFONE_PREPAY_MSISDN_index";
     //
-    public static String FileComparator_VODAFONE_ΚΙΝΗΤΗ_filename = "VODAFONE_ΚΙΝΗΤΗ_filename";
-    public static String FileComparator_VODAFONE_ΚΙΝΗΤΗ_MSISDN_index = "VODAFONE_ΚΙΝΗΤΗ_MSISDN_index";
+    public static String FileComparator_VODAFONE_MOBILE_filename = "VODAFONE_MOBILE_filename";
+    public static String FileComparator_VODAFONE_MOBILE_MSISDN_index = "VODAFONE_MOBILE_MSISDN_index";
     //
-    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_filename = "VODAFONE_ΣΤΑΘΕΡΗ_filename";
-    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index = "VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index";
-    public static String FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index = "VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index";
+    public static String FileComparator_VODAFONE_FIX_filename = "VODAFONE_FIX_filename";
+    public static String FileComparator_VODAFONE_FIX_MSISDN_index = "VODAFONE_FIX_MSISDN_index";
+    public static String FileComparator_VODAFONE_FIX_CIRCUIT_index = "VODAFONE_FIX_CIRCUIT_index";
     //-------
     private Map<String, List<CustomerEvent>> VODAFONE_BILLING_Lines = new HashMap();
     private Map<String, List<CustomerEvent>> VODAFONE_DB_Lines = new HashMap();
@@ -97,15 +96,15 @@ public class FileComparator_billing {
     String VODAFONE_SPLIT_filename;
     int VODAFONE_SPLIT_MSISDN_index;
     //
-    String VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename;
-    int VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index;
+    String VODAFONE_PREPAY_filename;
+    int VODAFONE_PREPAY_MSISDN_index;
     //
-    String VODAFONE_ΚΙΝΗΤΗ_filename;
-    int VODAFONE_ΚΙΝΗΤΗ_MSISDN_index;
+    String VODAFONE_MOBILE_filename;
+    int VODAFONE_MOBILE_MSISDN_index;
     //
-    String VODAFONE_ΣΤΑΘΕΡΗ_filename;
-    int VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index;
-    int VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index;
+    String VODAFONE_FIX_filename;
+    int VODAFONE_FIX_MSISDN_index;
+    int VODAFONE_FIX_CIRCUIT_index;
     //
     private Map<String, List<CustomerEvent>> HRS_ALL_Lines = new HashMap();
     //
@@ -151,24 +150,24 @@ public class FileComparator_billing {
         VODAFONE_SPLIT_filename = myProperties.getProperty("VODAFONE_SPLIT_filename");
         VODAFONE_SPLIT_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index"));
         //
-        VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename = myProperties.getProperty("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename");
-        VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index"));
+        VODAFONE_PREPAY_filename = myProperties.getProperty("VODAFONE_PREPAY_filename");
+        VODAFONE_PREPAY_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index"));
         //
-        VODAFONE_ΚΙΝΗΤΗ_filename = myProperties.getProperty("VODAFONE_ΚΙΝΗΤΗ_filename");
-        VODAFONE_ΚΙΝΗΤΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΚΙΝΗΤΗ_MSISDN_index"));
+        VODAFONE_MOBILE_filename = myProperties.getProperty("VODAFONE_MOBILE_filename");
+        VODAFONE_MOBILE_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index"));
         //
-        VODAFONE_ΣΤΑΘΕΡΗ_filename = myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_filename");
-        VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index"));
-        VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index = Integer.parseInt(myProperties.getProperty("VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index"));
+        VODAFONE_FIX_filename = myProperties.getProperty("VODAFONE_FIX_filename");
+        VODAFONE_FIX_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_MSISDN_index"));
+        VODAFONE_FIX_CIRCUIT_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index"));
     }
 
     public void loadFiles() throws IOException {
         //-------------- circuitToMSISDN_mapping --------------------
-        Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), CHARSET)
+        Files.readAllLines(Paths.get(VODAFONE_FIX_filename), CHARSET)
                 .stream()
                 .forEach(s -> {
-                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index] : "";
-                    String circuit = VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index >= 0 && s.split(SPLITTER).length > VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index ? s.split(SPLITTER)[VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index] : "";
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_FIX_MSISDN_index ? s.split(SPLITTER)[VODAFONE_FIX_MSISDN_index] : "";
+                    String circuit = VODAFONE_FIX_CIRCUIT_index >= 0 && s.split(SPLITTER).length > VODAFONE_FIX_CIRCUIT_index ? s.split(SPLITTER)[VODAFONE_FIX_CIRCUIT_index] : "";
                     if (!circuit.isEmpty() && !msisdn.isEmpty()) {
                         circuitToMSISDN_mapping.put(circuit, msisdn);
                     }
@@ -252,38 +251,38 @@ public class FileComparator_billing {
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_SPLIT_Lines = " + VODAFONE_SPLIT_Lines.size());
         //---
-        Map<String, List<CustomerEvent>> VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename), CHARSET)
+        Map<String, List<CustomerEvent>> VODAFONE_PREPAY_Lines = Files.readAllLines(Paths.get(VODAFONE_PREPAY_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index] : "";
-                    //System.out.println("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines line="+msisdn);
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ");
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_PREPAY_MSISDN_index ? s.split(SPLITTER)[VODAFONE_PREPAY_MSISDN_index] : "";
+                    //System.out.println("VODAFONE_PREPAY_Lines line="+msisdn);
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_PREPAY");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines = " + VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines.size());
+        System.out.println("VODAFONE_PREPAY_Lines = " + VODAFONE_PREPAY_Lines.size());
         //---
-        Map<String, List<CustomerEvent>> VODAFONE_ΚΙΝΗΤΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΚΙΝΗΤΗ_filename), CHARSET)
+        Map<String, List<CustomerEvent>> VODAFONE_MOBILE_Lines = Files.readAllLines(Paths.get(VODAFONE_MOBILE_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΚΙΝΗΤΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΚΙΝΗΤΗ_MSISDN_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_ΚΙΝΗΤΗ");
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_MOBILE_MSISDN_index ? s.split(SPLITTER)[VODAFONE_MOBILE_MSISDN_index] : "";
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_MOBILE");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("VODAFONE_ΚΙΝΗΤΗ_Lines = " + VODAFONE_ΚΙΝΗΤΗ_Lines.size());
+        System.out.println("VODAFONE_MOBILE_Lines = " + VODAFONE_MOBILE_Lines.size());
         //---
-        Map<String, List<CustomerEvent>> VODAFONE_ΣΤΑΘΕΡΗ_Lines = Files.readAllLines(Paths.get(VODAFONE_ΣΤΑΘΕΡΗ_filename), CHARSET)
+        Map<String, List<CustomerEvent>> VODAFONE_FIX_Lines = Files.readAllLines(Paths.get(VODAFONE_FIX_filename), CHARSET)
                 .stream()
                 .map(s -> {
-                    String msisdn = s.split(SPLITTER).length > VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index ? s.split(SPLITTER)[VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_ΣΤΑΘΕΡΗ");
+                    String msisdn = s.split(SPLITTER).length > VODAFONE_FIX_MSISDN_index ? s.split(SPLITTER)[VODAFONE_FIX_MSISDN_index] : "";
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_FIX");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("VODAFONE_ΣΤΑΘΕΡΗ_Lines = " + VODAFONE_ΣΤΑΘΕΡΗ_Lines.size());
+        System.out.println("VODAFONE_FIX_Lines = " + VODAFONE_FIX_Lines.size());
         //
         VODAFONE_BILLING_Lines.putAll(VODAFONE_SPLIT_Lines);
-        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_Lines);
-        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΚΙΝΗΤΗ_Lines);
-        VODAFONE_BILLING_Lines.putAll(VODAFONE_ΣΤΑΘΕΡΗ_Lines);        
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_PREPAY_Lines);
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_MOBILE_Lines);
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_FIX_Lines);        
     }
 
     public Set<CustomerEvent> HRS_NO_BILLING() throws IOException {
@@ -454,17 +453,22 @@ public class FileComparator_billing {
         myProperties.put(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index, "3");
 
         //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΑΡΤΟΚΙΝΗΤΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΑΡΤΟΚΙΝΗΤΗ_MSISDN_index, "3");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_PREPAY_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΑΡΤΟΚΙΝΗΤΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index, "3");
         //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΙΝΗΤΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΙΝΗΤΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΚΙΝΗΤΗ_MSISDN_index, "3");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_MOBILE_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΙΝΗΤΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index, "3");
         //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΣΤΑΘΕΡΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_MSISDN_index, "5");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_ΣΤΑΘΕΡΗ_CIRCUIT_index, "6");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΣΤΑΘΕΡΗ VODAFONE.csv");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index, "5");
+        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index, "6");
         //---------------
         System.out.println(myProperties);
+        try {
+            myProperties.store(new FileWriter("C:\\myfiles\\data\\HRSTools\\conf\\params.properties"), "utf-8");
+        } catch (IOException ex) {
+            Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
+        }
         FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
         try {
             myFileComparator.loadFiles();
