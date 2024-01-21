@@ -4,6 +4,19 @@
     Author     : gsofi
 --%>
 
+<%@page import="java.util.stream.Collectors"%>
+<%@page import="java.util.logging.Logger"%>
+<%@page import="java.util.logging.Level"%>
+<%@page import="java.io.IOException"%>
+<%@page import="tools.FileComparator_billing"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.nio.charset.StandardCharsets"%>
+<%@page import="java.util.Arrays"%>
+<%@page import="java.util.List"%>
+<%@page import="java.io.FileFilter"%>
+<%@page import="nsofiasLib.fileIO.JFileFilter"%>
+<%@page import="java.io.FilenameFilter"%>
+<%@page import="java.io.File"%>
 <%@page import="java.io.FileReader"%>
 <%@page import="java.io.FileWriter"%>
 <%@page import="java.util.Map.Entry"%>
@@ -12,92 +25,202 @@
 <%@page import="java.util.Enumeration"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<%
-    response.setCharacterEncoding("utf8");
-    final JspWriter out1 = out;
-    Map<String, String[]> params = request.getParameterMap();
-    Properties myProperties = new Properties();
-//--
-    params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-            .forEach(entry -> {
-                try {
-                    // out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
-                } catch (Exception e) {
-                }
-            });
-    //
-    if (request.getParameter("propertiesFile") != null) {
-        out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
-        myProperties.load(new FileReader("propertiesFile"));
-        
-    }
-    if (request.getParameter("compare") != null) {
-        
-        params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-        FileWriter myFileWriter = new FileWriter("C:\\myfiles\\data\\HRSTools\\conf\\params_.properties");
-        myProperties.store(myFileWriter, "utf-8");
-        myFileWriter.close();
-    }
-%>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <form action="params.jsp" method="POST" id="myForm">
-            <input type="submit" name=compare" value="Compare" />
+        <%
+            request.setCharacterEncoding("UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            final JspWriter out1 = out;
+            Map<String, String[]> params = request.getParameterMap();
+            Properties myProperties = new Properties();
+            String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
+            //--
+            params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
+                    .forEach(entry -> {
+                        try {
+                            //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
+                        } catch (Exception e) {
+                        }
+                    });
+            //
 
-            <input type="button" id="loadFileXml" value="Load parameters from file" onclick="document.getElementById('propertiesFile').click();" />
-            <input type="file" onchange="document.getElementById('myForm').submit();" style="display:none;" id="propertiesFile" accept=".properties" name="propertiesFile"/>
+            if (request.getParameter("directory") == null) {
+                File dir = new File(main_dir);
+                List<String> filenames = Arrays.asList(dir.list());
+        %>      
+        <form action="params.jsp" method="GET" id="myForm" enctype="multipart/form-data" accept-charset="UTF-8">
+            Files Directory for files:
+            <select onchange = "form.submit()"name="directory">
+                out.println("<option></option>");
+                <%
+                    for (String filename : filenames) {
+                        out.println("<option>" + filename + "</option>");
+                    }
+                %>
+            </select>
+        </form>
+        <%
+                return;
+            }
 
+            //---------- dir is not null ----------
+            String directory = request.getParameter("directory");
+            //-------------- compare -----------------
+            if (request.getParameter("compare") != null) {
+                params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                        .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+                FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+                myProperties.store(myFileWriter, "");
+                //**************************
+                FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
+                try {
+                    myFileComparator.loadFiles();
+                    myFileComparator.report(out);
+                } catch (IOException ex) {
+                    Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                //****************************
+                return;
+            }
+            if (request.getParameter("save") != null) {
+                params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                        .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+                FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+                out.println("saved to:" + main_dir + directory + "\\parameters.properties");
+                myProperties.store(myFileWriter, "");
+            }
+            //-- read csv files of directory 
+            File dir = new File(main_dir + directory);
+
+            FilenameFilter filter = ( d,   name) -> name.endsWith(".csv");
+            List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
+
+            // -- read local properties ---------
+            File paramsFile = new File(main_dir + directory + "\\parameters.properties");
+            if (paramsFile.exists()) {
+                myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
+            } else {
+                myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
+            }
+            if (request.getParameter("propertiesFile") != null) {
+                out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
+                myProperties.load(new FileReader("propertiesFile"));
+            }
+
+
+        %>
+
+        <h1>directory: <%=directory%></h1>
+        <form action="params.jsp" method="POST" id="myForm" >
+            <input type="submit" name="compare" value="Compare" />
+            <input type="submit" name="save" value="Save parameters" />
+            <input type="hidden" name="directory" value="<%=directory%>" />
             <table>
                 <tr><td>
-                        <p>CHARSET  : <input type="text" size="10" name="CHARSET" value="ISO-8859-7" />
-                        <p>SPLITTER  : <input type="text" size="1" name="SPLITTER" size="3" value=";" />
-                        <p>MAX_ACTIVATION_DATE  : <input type="text" size="2" name="MAX_ACTIVATION_DATE" value="" />
-                        <p>List ignoreList  : <input type="text" size ="60" name="ATLANTIS_MSISDN_index" value="13,6,69,72,23,75,57,4,33,24,20,19,76" />
+                        <p>CHARSET  : <input type="text" size="10" name="CHARSET" value="<%=myProperties.getProperty("CHARSET")%>" />
+                        <p>SPLITTER  : <input type="text" size="1" name="SPLITTER" size="3" value="<%=myProperties.getProperty("SPLITTER")%>" />
+                        <p>MAX_ACTIVATION_DATE  : <input type="text" size="30" name="MAX_ACTIVATION_DATE" value="<%=myProperties.getProperty("MAX_ACTIVATION_DATE")%>" />
+                        <p>List IGNORE_LIST  : <input type="text" size ="60" name="IGNORE_LIST" value="<%=myProperties.getProperty("IGNORE_LIST")%>" />
                     </td></tr><tr><td>
                         <p><h1> HRS Database files</h1>                
-                        <p><h3>ATLANTIS_filename : <input type="file" accept=".csv" accept=".csv" name="ATLANTIS_filename" /></h3>
-                        <p>ATLANTIS_MSISDN_index : <input type="text" size="2" size="2" name="ATLANTIS_MSISDN_index" value="" />
-                        <p>ATLANTIS_MSISDN2_index  : <input type="text" size="2" name="ATLANTIS_MSISDN2_index" value="" />
-                        <p>ATLANTIS_DATE_index : <input type="text" size="2" name="ATLANTIS_DATE_index" value="" />
-                        <p>ATLANTIS_STATUS_index  : <input type="text" size="2" name="ATLANTIS_STATUS_index" value="" />
+                        <p><b>ATLANTIS_filename : </b>                        
+                            <select name="ATLANTIS_filename">    
+                                <%
+                                    out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
+                                    for (String filename : filenames) {
+                                        out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                    }
+                                %>
+                            </select>                      
+                        <p>ATLANTIS_MSISDN_index : <input type="text" size="2" size="2" name="ATLANTIS_MSISDN_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN_index")%>" />
+                        <p>ATLANTIS_MSISDN2_index  : <input type="text" size="2" name="ATLANTIS_MSISDN2_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN2_index")%>" />
+                        <p>ATLANTIS_DATE_index : <input type="text" size="2" name="ATLANTIS_DATE_index" value="<%=myProperties.getProperty("ATLANTIS_DATE_index")%>" />
+                        <p>ATLANTIS_STATUS_index  : <input type="text" size="2" name="ATLANTIS_STATUS_index" value="<%=myProperties.getProperty("ATLANTIS_STATUS_index")%>" />
                     </td></tr><tr><td>
-                        <h1><h3> Vodafon database SB_HRS</h1>
-                        <p><h3>SB_HRS_filename : <input type="file" accept=".csv" name="SB_HRS_filename" /></h3>
-                        <p>SB_HRS_MSISDN_index : <input type="text" size="2" name="SB_HRS_MSISDN_index" value="" />
-                        <p>SB_HRS_DATE_index  : <input type="text" size="2" name="SB_HRS_DATE_index" value="" />
+                        <h1><h3> Vodafon database SB_HRS</h1>                        
+                        <select name="SB_HRS_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("SB_HRS_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                         
+                        <p>SB_HRS_MSISDN_index : <input type="text" size="2" name="SB_HRS_MSISDN_index" value="<%=myProperties.getProperty("SB_HRS_MSISDN_index")%>" />
+                        <p>SB_HRS_DATE_index  : <input type="text" size="2" name="SB_HRS_DATE_index" value="<%=myProperties.getProperty("SB_HRS_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon database ELRA</h1>
-                        <p><h3>ELRA_filename  : <input type="file" accept=".csv" name="ELRA_filename" /></h3>
-                        <p>ELRA_MSISDN_index : <input type="text" size="2" name="ELRA_MSISDN_index" value="" />
-                        <p>ELRA_DATE_index  : <input type="text" size="2" name="ELRA_DATE_index" value="" />
+                        <h1> Vodafon database ELRA</h1>                        
+                        <select name="ELRA_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("ELRA_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                         
+                        <p>ELRA_MSISDN_index : <input type="text" size="2" name="ELRA_MSISDN_index" value="<%=myProperties.getProperty("ELRA_MSISDN_index")%>" />
+                        <p>ELRA_DATE_index  : <input type="text" size="2" name="ELRA_DATE_index" value="<%=myProperties.getProperty("ELRA_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon database ELRA_PREPAY</h1>
-                        <p><h3>ELRA_PREPAY_filename : <input type="file" accept=".csv" name="ELRA_PREPAY_filename" /></h3>
-                        <p>ELRA_PREPAY_MSISDN_index  : <input type="text" size="2" name="ELRA_PREPAY_MSISDN_index" value="" />
-                        <p>ELRA_PREPAY_DATE_index  : <input type="text" size="2" name="ELRA_PREPAY_DATE_index" value="" />
+                        <h1> Vodafon database ELRA_PREPAY</h1>                        
+                        <select name="ELRA_PREPAY_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("ELRA_PREPAY_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                        
+                        <p>ELRA_PREPAY_MSISDN_index  : <input type="text" size="2" name="ELRA_PREPAY_MSISDN_index" value="<%=myProperties.getProperty("ELRA_PREPAY_MSISDN_index")%>" />
+                        <p>ELRA_PREPAY_DATE_index  : <input type="text" size="2" name="ELRA_PREPAY_DATE_index" value="<%=myProperties.getProperty("ELRA_PREPAY_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon billing SPLIT</h1>
-                        <p>VODAFONE_SPLIT_filename : <input type="file" accept=".csv" name="VODAFONE_SPLIT_filename" /></h3>
-                        <p>VODAFONE_SPLIT_MSISDN_index : <input type="text" size="2" name="VODAFONE_SPLIT_MSISDN_index" value=""/>
+                        <h1> Vodafon billing SPLIT</h1>                        
+                        <select name="VODAFONE_SPLIT_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("VODAFONE_SPLIT_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                        
+                        <p>VODAFONE_SPLIT_MSISDN_index : <input type="text" size="2" name="VODAFONE_SPLIT_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index")%>"/>
                     </td></tr><tr><td>
-                        <h1> Vodafon billing ΚΑΡΤΟΚΙΝΗΤΗ</h1>
-                        <p><h3>VODAFONE_PREPAY_filename  : <input type="file" accept=".csv" name="VODAFONE_PREPAY_filename" /></h3>
-                        <p>VODAFONE_PREPAY_MSISDN_index  : <input type="text" size="2" name="VODAFONE_PREPAY_MSISDN_index" value="" />
+                        <h1> Vodafon billing ΚΑΡΤΟΚΙΝΗΤΗ</h1>                        
+                        <select name="VODAFONE_PREPAY_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("VODAFONE_PREPAY_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                        
+                        <p>VODAFONE_PREPAY_MSISDN_index  : <input type="text" size="2" name="VODAFONE_PREPAY_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon billing ΚΙΝΗΤΗ</h1>
-                        <p><h3>VODAFONE_MOBILE_filename  : <input type="file" accept=".csv" name="VODAFONE_MOBILE_filename" /></h3>
-                        <p>VODAFONE_MOBILE_MSISDN_index  : <input type="text" size="2" name="VODAFONE_MOBILE_MSISDN_index" value="" />
+                        <h1> Vodafon billing ΚΙΝΗΤΗ</h1>                        
+                        <select name="VODAFONE_MOBILE_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("VODAFONE_MOBILE_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                        
+                        <p>VODAFONE_MOBILE_MSISDN_index  : <input type="text" size="2" name="VODAFONE_MOBILE_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon billing ΣΤΑΘΕΡΗ</h1>
-                        <p><h3>VODAFONE_FIX_filename  : <input type="file" accept=".csv" name="VODAFONE_FIX_filename" /></h3>
-                        <p>VODAFONE_FIX_MSISDN_index  : <input type="text" size="2" name="VODAFONE_FIX_MSISDN_index" value="" />
-                        <p>VODAFONE_FIX_CIRCUIT_index  : <input type="text" size="2" name="VODAFONE_FIX_CIRCUIT_index" value="" />       
+                        <h1> Vodafon billing ΣΤΑΘΕΡΗ</h1>                        
+                        <select name="VODAFONE_FIX_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("VODAFONE_FIX_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                        
+                        <p>VODAFONE_FIX_MSISDN_index  : <input type="text" size="2" name="VODAFONE_FIX_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_FIX_MSISDN_index")%>" />
+                        <p>VODAFONE_FIX_CIRCUIT_index  : <input type="text" size="2" name="VODAFONE_FIX_CIRCUIT_index" value="<%=myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index")%>" />       
                     </td></tr>
             </table>
 
@@ -114,7 +237,7 @@
     SPLITTER = 
     MAX_ACTIVATION_DATE 
     #
-    List ignoreList 
+    List IGNORE_LIST 
     # HRS files</h1>
     ATLANTIS_filename 
     ATLANTIS_MSISDN_index 

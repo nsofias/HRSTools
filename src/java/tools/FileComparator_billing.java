@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
+import javax.servlet.jsp.JspWriter;
 import model.CustomerEvent;
 
 /**
@@ -282,7 +283,7 @@ public class FileComparator_billing {
         VODAFONE_BILLING_Lines.putAll(VODAFONE_SPLIT_Lines);
         VODAFONE_BILLING_Lines.putAll(VODAFONE_PREPAY_Lines);
         VODAFONE_BILLING_Lines.putAll(VODAFONE_MOBILE_Lines);
-        VODAFONE_BILLING_Lines.putAll(VODAFONE_FIX_Lines);        
+        VODAFONE_BILLING_Lines.putAll(VODAFONE_FIX_Lines);
     }
 
     public Set<CustomerEvent> HRS_NO_BILLING() throws IOException {
@@ -398,6 +399,93 @@ public class FileComparator_billing {
         System.out.println("\n\n*** Numbers that exist ONLY in VOD DB but not in HRS, details ***");
         VODAFON_DB_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
                 .forEach(s -> System.out.println("  VODAFON_DB_only-> " + s.getMSISDN() + " : " + s));
+    }
+
+    public void report(JspWriter out) throws IOException {
+        Set<CustomerEvent> myInvalidRows = getInvalidBaseRows();
+        Set<CustomerEvent> HRS_NO_VODDB = HRS_NO_VODDB();
+        Set<CustomerEvent> HRS_NO_BILLING = HRS_NO_BILLING();
+        Set<CustomerEvent> VODAFON_BILLING_only = VODAFON_BILLING_only();
+        Set<CustomerEvent> VODAFON_DB_only = VODAFON_DB_only();
+
+        //---
+        out.println();
+        out.println("<p>"+"*************** SUMMARY ***********");
+        out.println("<p>"+"IGNORE_LIST:" + IGNORE_LIST);
+        out.println("<p>"+"HRS records (Atlantis) : " + HRS_ALL_Lines.size());
+        out.println("<p>"+"VODAFONE DB records : " + VODAFONE_DB_Lines.size());
+        out.println("<p>"+"VODAFONE BILLING records: " + VODAFONE_BILLING_Lines.size());
+        //---
+        //System.out.println("<p>"+"\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
+        {
+            out.println("<h1>"+"Numbers that exist in HRS but not in Vod Billing : " + HRS_NO_BILLING.size()+"</h1>");
+            Map<String, Long> statusList = HRS_NO_BILLING.stream()
+                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+                try {
+                    out.println("<p>"+"        " + e.getValue() + " - " + statuses.get(e.getKey()));
+                } catch (Exception ex) {
+                }
+            });
+        }
+        //---
+        out.println("<h1>"+"Numbers that exist ONLY in VOD BILLING but not in HRS: " + VODAFON_BILLING_only.size()+"</h1>");
+        //---
+        {
+            out.println("<p>"+"\nNumbers that exist in HRS but not in Vod DB : " + HRS_NO_VODDB.size());
+            Map<String, Long> statusList = HRS_NO_VODDB.stream()
+                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+                try {
+                    out.println("<p>"+"        " + e.getValue() + " - " + statuses.get(e.getKey()));
+                } catch (Exception ex) {
+                }
+            });
+        }
+        //---        
+        out.println("<h1>"+"\nNumbers that exist ONLY in VOD DB but not in HRS : " + VODAFON_DB_only.size()+"</h1>");
+        //-----------
+        out.println("<p>");
+        out.println("<p>"+"***************************************************************");
+        out.println("<p>"+"*** DETAILS ***");
+        out.println("<p>"+"***************************************************************");
+        //---------
+        out.println("<p>"+"\n\n*** Numbers that exist in HRS but not in Vod Billing, details ***");
+        HRS_NO_BILLING.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>"+"  HRS_NO_BILLING: " + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+        //----------       
+        out.println("<p>"+"\n\n*** umbers that exist ONLY in VOD BILLING but not in HRS, details ***");
+        VODAFON_BILLING_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>"+"  VODAFON_BILLING_only-> " + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+        //----------
+        out.println("<p>"+"\n\n*** Numbers that exist in HRS but not in Vod DB, details ***");
+        HRS_NO_VODDB.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>"+"  HRS_NO_VODDB: " + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+
+        //----------        
+        out.println("<p>"+"\n\n*** Numbers that exist ONLY in VOD DB but not in HRS, details ***");
+        VODAFON_DB_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>"+"  VODAFON_DB_only-> " + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
     }
 
     private static String formatDate(String activationDate) {
