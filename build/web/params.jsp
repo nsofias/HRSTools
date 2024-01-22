@@ -96,7 +96,7 @@
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,   name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,       name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -126,22 +126,38 @@
                         <p>MAX_ACTIVATION_DATE  : <input type="text" size="30" name="MAX_ACTIVATION_DATE" value="<%=myProperties.getProperty("MAX_ACTIVATION_DATE")%>" />
                         <p>List IGNORE_LIST  : <input type="text" size ="60" name="IGNORE_LIST" value="<%=myProperties.getProperty("IGNORE_LIST")%>" />
                     </td></tr><tr><td>
-                        <p><h1> HRS Database files</h1>                
-                        <p><b>ATLANTIS_filename : </b>                        
-                            <select name="ATLANTIS_filename">    
+                        <p><h1> HRS files</h1>                
+                        <b>ATLANTIS_DATABASE_filename : </b>                        
+                        <select name="ATLANTIS_filename">    
+                            <%
+                                out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            %>
+                        </select>                      
+                        <p>ATLANTIS_MSISDN_index : <input type="text" size="2" size="2" name="ATLANTIS_MSISDN_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN_index")%>" />
+                        <p>ATLANTIS_MSISDN2_index  : <input type="text" size="2" name="ATLANTIS_MSISDN2_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN2_index")%>" />
+                        <p>ATLANTIS_DATE_index : <input type="text" size="2" name="ATLANTIS_DATE_index" value="<%=myProperties.getProperty("ATLANTIS_DATE_index")%>" />
+                        <p>ATLANTIS_STATUS_index  : <input type="text" size="2" name="ATLANTIS_STATUS_index" value="<%=myProperties.getProperty("ATLANTIS_STATUS_index")%>" />
+
+
+                        <P><b>ATLANTIS_BILLING_filename : </b>                        
+                            <select name="HRS_BILLING_filename">    
                                 <%
-                                    out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
+                                    out.println("<option>" + myProperties.getProperty("HRS_BILLING_filename") + "</option>");
                                     for (String filename : filenames) {
                                         out.println("<option value='" + filename + "'>" + filename + "</option>");
                                     }
                                 %>
                             </select>                      
-                        <p>ATLANTIS_MSISDN_index : <input type="text" size="2" size="2" name="ATLANTIS_MSISDN_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN_index")%>" />
-                        <p>ATLANTIS_MSISDN2_index  : <input type="text" size="2" name="ATLANTIS_MSISDN2_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN2_index")%>" />
-                        <p>ATLANTIS_DATE_index : <input type="text" size="2" name="ATLANTIS_DATE_index" value="<%=myProperties.getProperty("ATLANTIS_DATE_index")%>" />
-                        <p>ATLANTIS_STATUS_index  : <input type="text" size="2" name="ATLANTIS_STATUS_index" value="<%=myProperties.getProperty("ATLANTIS_STATUS_index")%>" />
+                        <p>HRS_BILLING_MSISDN_index : <input type="text" size="2" size="2" name="HRS_BILLING_MSISDN_index" value="<%=myProperties.getProperty("ATLANTIS_MSISDN_index")%>" />
+
+
                     </td></tr><tr><td>
-                        <h1><h3> Vodafon database SB_HRS</h1>                        
+                        <!----------------- VODAFON DATABASE ------------------------------------------->
+                        <h1>VODAFON DATABASE</h1> 
+                        <b>SB_HRS_filename : </b>       
                         <select name="SB_HRS_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("SB_HRS_filename") + "</option>");
@@ -153,7 +169,7 @@
                         <p>SB_HRS_MSISDN_index : <input type="text" size="2" name="SB_HRS_MSISDN_index" value="<%=myProperties.getProperty("SB_HRS_MSISDN_index")%>" />
                         <p>SB_HRS_DATE_index  : <input type="text" size="2" name="SB_HRS_DATE_index" value="<%=myProperties.getProperty("SB_HRS_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon database ELRA</h1>                        
+                        <b>ELRA_filename : </b>                        
                         <select name="ELRA_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("ELRA_filename") + "</option>");
@@ -165,7 +181,7 @@
                         <p>ELRA_MSISDN_index : <input type="text" size="2" name="ELRA_MSISDN_index" value="<%=myProperties.getProperty("ELRA_MSISDN_index")%>" />
                         <p>ELRA_DATE_index  : <input type="text" size="2" name="ELRA_DATE_index" value="<%=myProperties.getProperty("ELRA_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon database ELRA_PREPAY</h1>                        
+                        <b>ELRA_PREPAY_filename : </b>                               
                         <select name="ELRA_PREPAY_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("ELRA_PREPAY_filename") + "</option>");
@@ -177,7 +193,9 @@
                         <p>ELRA_PREPAY_MSISDN_index  : <input type="text" size="2" name="ELRA_PREPAY_MSISDN_index" value="<%=myProperties.getProperty("ELRA_PREPAY_MSISDN_index")%>" />
                         <p>ELRA_PREPAY_DATE_index  : <input type="text" size="2" name="ELRA_PREPAY_DATE_index" value="<%=myProperties.getProperty("ELRA_PREPAY_DATE_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon billing SPLIT</h1>                        
+                        <!----------------- BILLING ------------------------------------------->
+                        <h1> VODAFON BILLING</h1>   
+                        <b>SPLIT_filename : </b>      
                         <select name="VODAFONE_SPLIT_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_SPLIT_filename") + "</option>");
@@ -186,9 +204,9 @@
                                 }
                             %>
                         </select>                        
-                        <p>VODAFONE_SPLIT_MSISDN_index : <input type="text" size="2" name="VODAFONE_SPLIT_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index")%>"/>
+                        <p>SPLIT_MSISDN_index : <input type="text" size="2" name="VODAFONE_SPLIT_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index")%>"/>
                     </td></tr><tr><td>
-                        <h1> Vodafon billing ΚΑΡΤΟΚΙΝΗΤΗ</h1>                        
+                        <b>PREPAY_filename : </b>                        
                         <select name="VODAFONE_PREPAY_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_PREPAY_filename") + "</option>");
@@ -197,9 +215,9 @@
                                 }
                             %>
                         </select>                        
-                        <p>VODAFONE_PREPAY_MSISDN_index  : <input type="text" size="2" name="VODAFONE_PREPAY_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index")%>" />
+                        <p>PREPAY_MSISDN_index  : <input type="text" size="2" name="VODAFONE_PREPAY_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index")%>" />
                     </td></tr><tr><td>
-                        <h1> Vodafon billing ΚΙΝΗΤΗ</h1>                        
+                        <b>MOBILE_filename : </b>                         
                         <select name="VODAFONE_MOBILE_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_MOBILE_filename") + "</option>");
@@ -208,9 +226,9 @@
                                 }
                             %>
                         </select>                        
-                        <p>VODAFONE_MOBILE_MSISDN_index  : <input type="text" size="2" name="VODAFONE_MOBILE_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index")%>" />
-                    </td></tr><tr><td>
-                        <h1> Vodafon billing ΣΤΑΘΕΡΗ</h1>                        
+                        <p>MOBILE_MSISDN_index  : <input type="text" size="2" name="VODAFONE_MOBILE_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index")%>" />
+                    </td></tr><tr><td>                     
+                        <b>FIX_filename : </b>
                         <select name="VODAFONE_FIX_filename">    
                             <%
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_FIX_filename") + "</option>");
@@ -219,14 +237,11 @@
                                 }
                             %>
                         </select>                        
-                        <p>VODAFONE_FIX_MSISDN_index  : <input type="text" size="2" name="VODAFONE_FIX_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_FIX_MSISDN_index")%>" />
-                        <p>VODAFONE_FIX_CIRCUIT_index  : <input type="text" size="2" name="VODAFONE_FIX_CIRCUIT_index" value="<%=myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index")%>" />       
+                        <p>FIX_MSISDN_index  : <input type="text" size="2" name="VODAFONE_FIX_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_FIX_MSISDN_index")%>" />
+                        <p>FIX_CIRCUIT_index  : <input type="text" size="2" name="VODAFONE_FIX_CIRCUIT_index" value="<%=myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index")%>" />       
                     </td></tr>
             </table>
-
-
         </form>
-
     </body>
 </html>
 

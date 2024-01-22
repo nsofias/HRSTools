@@ -159,7 +159,7 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,   name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,       name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -202,18 +202,18 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(myProperties.getProperty("IGNORE_LIST"));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <p><h1> HRS Database files</h1>                \n");
-      out.write("                        <p><b>ATLANTIS_filename : </b>                        \n");
-      out.write("                            <select name=\"ATLANTIS_filename\">    \n");
-      out.write("                                ");
+      out.write("                        <p><h1> HRS files</h1>                \n");
+      out.write("                        <b>ATLANTIS_DATABASE_filename : </b>                        \n");
+      out.write("                        <select name=\"ATLANTIS_filename\">    \n");
+      out.write("                            ");
 
-                                    out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
-                                    for (String filename : filenames) {
-                                        out.println("<option value='" + filename + "'>" + filename + "</option>");
-                                    }
-                                
+                                out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
+                                for (String filename : filenames) {
+                                    out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                }
+                            
       out.write("\n");
-      out.write("                            </select>                      \n");
+      out.write("                        </select>                      \n");
       out.write("                        <p>ATLANTIS_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"ATLANTIS_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("ATLANTIS_MSISDN_index"));
       out.write("\" />\n");
@@ -226,8 +226,28 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("                        <p>ATLANTIS_STATUS_index  : <input type=\"text\" size=\"2\" name=\"ATLANTIS_STATUS_index\" value=\"");
       out.print(myProperties.getProperty("ATLANTIS_STATUS_index"));
       out.write("\" />\n");
+      out.write("\n");
+      out.write("\n");
+      out.write("                        <P><b>ATLANTIS_BILLING_filename : </b>                        \n");
+      out.write("                            <select name=\"HRS_BILLING_filename\">    \n");
+      out.write("                                ");
+
+                                    out.println("<option>" + myProperties.getProperty("HRS_BILLING_filename") + "</option>");
+                                    for (String filename : filenames) {
+                                        out.println("<option value='" + filename + "'>" + filename + "</option>");
+                                    }
+                                
+      out.write("\n");
+      out.write("                            </select>                      \n");
+      out.write("                        <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
+      out.print(myProperties.getProperty("ATLANTIS_MSISDN_index"));
+      out.write("\" />\n");
+      out.write("\n");
+      out.write("\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1><h3> Vodafon database SB_HRS</h1>                        \n");
+      out.write("                        <!----------------- VODAFON DATABASE ------------------------------------------->\n");
+      out.write("                        <h1>VODAFON DATABASE</h1> \n");
+      out.write("                        <b>SB_HRS_filename : </b>       \n");
       out.write("                        <select name=\"SB_HRS_filename\">    \n");
       out.write("                            ");
 
@@ -245,7 +265,7 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(myProperties.getProperty("SB_HRS_DATE_index"));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon database ELRA</h1>                        \n");
+      out.write("                        <b>ELRA_filename : </b>                        \n");
       out.write("                        <select name=\"ELRA_filename\">    \n");
       out.write("                            ");
 
@@ -263,7 +283,7 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(myProperties.getProperty("ELRA_DATE_index"));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon database ELRA_PREPAY</h1>                        \n");
+      out.write("                        <b>ELRA_PREPAY_filename : </b>                               \n");
       out.write("                        <select name=\"ELRA_PREPAY_filename\">    \n");
       out.write("                            ");
 
@@ -281,7 +301,9 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(myProperties.getProperty("ELRA_PREPAY_DATE_index"));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon billing SPLIT</h1>                        \n");
+      out.write("                        <!----------------- BILLING ------------------------------------------->\n");
+      out.write("                        <h1> VODAFON BILLING</h1>   \n");
+      out.write("                        <b>SPLIT_filename : </b>      \n");
       out.write("                        <select name=\"VODAFONE_SPLIT_filename\">    \n");
       out.write("                            ");
 
@@ -292,11 +314,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>VODAFONE_SPLIT_MSISDN_index : <input type=\"text\" size=\"2\" name=\"VODAFONE_SPLIT_MSISDN_index\" value=\"");
+      out.write("                        <p>SPLIT_MSISDN_index : <input type=\"text\" size=\"2\" name=\"VODAFONE_SPLIT_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index"));
       out.write("\"/>\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon billing ΚΑΡΤΟΚΙΝΗΤΗ</h1>                        \n");
+      out.write("                        <b>PREPAY_filename : </b>                        \n");
       out.write("                        <select name=\"VODAFONE_PREPAY_filename\">    \n");
       out.write("                            ");
 
@@ -307,11 +329,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>VODAFONE_PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_PREPAY_MSISDN_index\" value=\"");
+      out.write("                        <p>PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_PREPAY_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index"));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon billing ΚΙΝΗΤΗ</h1>                        \n");
+      out.write("                        <b>MOBILE_filename : </b>                         \n");
       out.write("                        <select name=\"VODAFONE_MOBILE_filename\">    \n");
       out.write("                            ");
 
@@ -322,11 +344,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>VODAFONE_MOBILE_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_MOBILE_MSISDN_index\" value=\"");
+      out.write("                        <p>MOBILE_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_MOBILE_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index"));
       out.write("\" />\n");
-      out.write("                    </td></tr><tr><td>\n");
-      out.write("                        <h1> Vodafon billing ΣΤΑΘΕΡΗ</h1>                        \n");
+      out.write("                    </td></tr><tr><td>                     \n");
+      out.write("                        <b>FIX_filename : </b>\n");
       out.write("                        <select name=\"VODAFONE_FIX_filename\">    \n");
       out.write("                            ");
 
@@ -337,18 +359,15 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>VODAFONE_FIX_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_MSISDN_index\" value=\"");
+      out.write("                        <p>FIX_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_FIX_MSISDN_index"));
       out.write("\" />\n");
-      out.write("                        <p>VODAFONE_FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_CIRCUIT_index\" value=\"");
+      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_CIRCUIT_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index"));
       out.write("\" />       \n");
       out.write("                    </td></tr>\n");
       out.write("            </table>\n");
-      out.write("\n");
-      out.write("\n");
       out.write("        </form>\n");
-      out.write("\n");
       out.write("    </body>\n");
       out.write("</html>\n");
       out.write("\n");
