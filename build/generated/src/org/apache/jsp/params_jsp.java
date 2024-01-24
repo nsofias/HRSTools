@@ -130,8 +130,8 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
             }
             //---------- dir is not null ----------
             String directory = request.getParameter("directory");
-out.println("<a href='javascript:history.back()'>Go Back</a>");
- 
+            out.println("<a href='javascript:history.back()'>Go Back</a>");
+
             if (request.getParameter("compare_or_save") != null) {
                 params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
                 FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
@@ -182,7 +182,7 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,                   name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,                       name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -205,13 +205,13 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
       out.write("</h1>\n");
       out.write("        <form action=\"params.jsp\" method=\"POST\" id=\"myForm\" >\n");
       out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_HRS_BILLING_NO\" value=\"Only in HRS Database not in HRS Billing\" />\n");
-      out.write("            <input type=\"submit\" name=\"report_HRS_DB_NO_HRS_BILLING_YES\" value=\"Only in HRS Billing not in HRS Database\" />\n");
+      out.write("                <input type=\"submit\" name=\"report_HRS_DB_NO_HRS_BILLING_YES\" value=\"Only in HRS Billing not in HRS Database\" />\n");
       out.write("            <p><input type=\"submit\" name=\"report_VOD_DB_YES_VOD_BILLING_NO\" value=\"Only in Vodafon DB not in Vodafon Billing\" />\n");
-      out.write("            <input type=\"submit\" name=\"report_VOD_DB_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in Vodafon DB\" />\n");
+      out.write("                <input type=\"submit\" name=\"report_VOD_DB_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in Vodafon DB\" />\n");
       out.write("            <p><input type=\"submit\" name=\"report_HRS_BILLING_YES_VOD_BILLING_NO\" value=\"Only in HRS Billing not in Vodafon Billing\" />\n");
-      out.write("            <input type=\"submit\" name=\"report_HRS_BILLING_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in HRS Billing\" />\n");
+      out.write("                <input type=\"submit\" name=\"report_HRS_BILLING_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in HRS Billing\" />\n");
       out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_VOD_DB_NO\" value=\"Only in HRS DB not in Vodafon DB\" />\n");
-      out.write("            <input type=\"submit\" name=\"report_HRS_DB_NO_VOD_DB_YES\" value=\"Only in Vodafon DB not in HRS DB\" />\n");
+      out.write("                <input type=\"submit\" name=\"report_HRS_DB_NO_VOD_DB_YES\" value=\"Only in Vodafon DB not in HRS DB\" />\n");
       out.write("            <p><input type=\"submit\" name=\"save\" value=\"Save parameters\" />\n");
       out.write("                <input type=\"hidden\" name=\"directory\" value=\"");
       out.print(directory);
@@ -269,7 +269,7 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
                                 
       out.write("\n");
       out.write("                            </select>                      \n");
-      out.write("                            <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
+      out.write("                        <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("HRS_BILLING_MSISDN_index"));
       out.write("\" />\n");
       out.write("\n");
@@ -392,8 +392,15 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
       out.write("                        <p>FIX_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_MSISDN_index\" value=\"");
       out.print(myProperties.getProperty("VODAFONE_FIX_MSISDN_index"));
       out.write("\" />\n");
-      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_CIRCUIT_index\" value=\"");
-      out.print(myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index"));
+      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index));
+      out.write("\" />   \n");
+      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index));
       out.write("\" />       \n");
       out.write("                    </td></tr>\n");
       out.write("            </table>\n");
@@ -403,44 +410,6 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
       out.write("\n");
       out.write("\n");
       out.write("<!--\n");
-      out.write("        #\n");
-      out.write("    CHARSET \n");
-      out.write("    SPLITTER = \n");
-      out.write("    MAX_ACTIVATION_DATE \n");
-      out.write("    #\n");
-      out.write("    List IGNORE_LIST \n");
-      out.write("    # HRS files</h1>\n");
-      out.write("    ATLANTIS_filename \n");
-      out.write("    ATLANTIS_MSISDN_index \n");
-      out.write("    ATLANTIS_MSISDN2_index \n");
-      out.write("    ATLANTIS_DATE_index\n");
-      out.write("    ATLANTIS_STATUS_index \n");
-      out.write("    #-------- Vodafon files\n");
-      out.write("    SB_HRS_filename \n");
-      out.write("    SB_HRS_MSISDN_index\n");
-      out.write("    SB_HRS_DATE_index \n");
-      out.write("    #\n");
-      out.write("    ELRA_filename \n");
-      out.write("    ELRA_MSISDN_index\n");
-      out.write("    ELRA_DATE_index \n");
-      out.write("    #\n");
-      out.write("    ELRA_PREPAY_filename\n");
-      out.write("    ELRA_PREPAY_MSISDN_index \n");
-      out.write("    ELRA_PREPAY_DATE_index \n");
-      out.write("        #\n");
-      out.write("    VODAFONE_SPLIT_filename\n");
-      out.write("    VODAFONE_SPLIT_MSISDN_index\n");
-      out.write("    #\n");
-      out.write("    VODAFONE_PREPAY_filename \n");
-      out.write("    VODAFONE_PREPAY_MSISDN_index \n");
-      out.write("    #\n");
-      out.write("    VODAFONE_MOBILE_filename \n");
-      out.write("    VODAFONE_MOBILE_MSISDN_index \n");
-      out.write("    #\n");
-      out.write("    VODAFONE_FIX_filename \n");
-      out.write("    VODAFONE_FIX_MSISDN_index \n");
-      out.write("    VODAFONE_FIX_CIRCUIT_index \n");
-      out.write("\n");
       out.write("\n");
       out.write("-->\n");
     } catch (Throwable t) {

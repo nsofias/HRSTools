@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
+import static java.util.Comparator.comparing;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,7 @@ public class FileComparator_billing {
     //
     public static String FileComparator_VODAFONE_FIX_filename = "VODAFONE_FIX_filename";
     public static String FileComparator_VODAFONE_FIX_MSISDN_index = "VODAFONE_FIX_MSISDN_index";
+    public static String FileComparator_VODAFONE_FIX_ERP_index = "VODAFONE_FIX_ERP_index";
     public static String FileComparator_VODAFONE_FIX_CIRCUIT_index = "VODAFONE_FIX_CIRCUIT_index";
     //-------
     private Map<String, List<CustomerEvent>> VODAFONE_BILLING_Lines = new HashMap();
@@ -115,10 +117,10 @@ public class FileComparator_billing {
     String VODAFONE_FIX_filename;
     int VODAFONE_FIX_MSISDN_index;
     int VODAFONE_FIX_CIRCUIT_index;
+    int VODAFONE_FIX_ERP_index;
     //
-    Predicate<CustomerEvent> validRow = s -> isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
-    Predicate<CustomerEvent> invalidRow = s -> !(isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty());
-    Predicate<CustomerEvent> activationDateFilter = s -> !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
+    Predicate<CustomerEvent> validRow = s -> !s.getMSISDN().isEmpty() && isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
+    Predicate<CustomerEvent> myDBFilter = s -> !IGNORE_LIST.contains(s.getStatus()) && !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
 
     //#############################################################################################
     public FileComparator_billing(Properties myProperties) {
@@ -169,7 +171,9 @@ public class FileComparator_billing {
         //
         VODAFONE_FIX_filename = myProperties.getProperty("VODAFONE_FIX_filename");
         VODAFONE_FIX_MSISDN_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_MSISDN_index"));
+        VODAFONE_FIX_ERP_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_ERP_index"));
         VODAFONE_FIX_CIRCUIT_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index"));
+        VODAFONE_FIX_ERP_index = Integer.parseInt(myProperties.getProperty("VODAFONE_FIX_ERP_index"));
     }
 
     public void loadFiles() throws IOException {
@@ -194,9 +198,10 @@ public class FileComparator_billing {
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     //System.out.println("-> activationDate=" + activationDate+" S="+s);
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), status, s + " ATLANTIS");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), status, "ATLANTIS");
                 })
-                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .filter(validRow)
+                .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("ATLANTIS_lines = " + ATLANTIS_lines.size());
         //---
         Map<String, List<CustomerEvent>> ATLANTIS_2ndlines = Files.readAllLines(Paths.get(ATLANTIS_filename), CHARSET)
@@ -205,9 +210,9 @@ public class FileComparator_billing {
                     String secondMSISDN = ATLANTIS_MSISDN2_index >= 0 && s.split(SPLITTER).length > ATLANTIS_MSISDN2_index ? s.split(SPLITTER)[ATLANTIS_MSISDN2_index] : "";
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(secondMSISDN), formatDate(activationDate), status, s + " ATLANTIS_2ndlines");
+                    return new CustomerEvent(circuitToMSISDN(secondMSISDN), formatDate(activationDate), status, "ATLANTIS_2ndlines");
                 })
-                .filter(validRow).filter(activationDateFilter).filter(e -> !e.getMSISDN().isEmpty() && !IGNORE_LIST.contains(e.getStatus()))
+                .filter(validRow)
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("ATLANTIS_2ndlines = " + ATLANTIS_2ndlines.size());
         HRS_DB_Lines.putAll(ATLANTIS_2ndlines);
@@ -218,7 +223,7 @@ public class FileComparator_billing {
                 .stream()
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > HRS_BILLING_MSISDN_index ? s.split(SPLITTER)[HRS_BILLING_MSISDN_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " HRS_BILLING");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "HRS_BILLING");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("HRS_BILLING_Lines = " + HRS_BILLING_Lines.size());
@@ -230,9 +235,9 @@ public class FileComparator_billing {
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > SB_HRS_MSISDN_index ? s.split(SPLITTER)[SB_HRS_MSISDN_index] : "";
                     String activationDate = s.split(SPLITTER).length > SB_HRS_DATE_index ? s.split(SPLITTER)[SB_HRS_DATE_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", s + " SB_HRS_lines");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", "SB_HRS_lines");
                 })
-                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus()))
+                .filter(validRow)
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("SB_HRS_lines = " + SB_HRS_lines.size());
         //
@@ -241,9 +246,10 @@ public class FileComparator_billing {
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > ELRA_PREPAY_MSISDN_index ? s.split(SPLITTER)[ELRA_PREPAY_MSISDN_index] : "";
                     String activationDate = s.split(SPLITTER).length > ELRA_PREPAY_DATE_index ? s.split(SPLITTER)[ELRA_PREPAY_DATE_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", s + " elra_Prepay_lines");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", "elra_Prepay_lines");
                 })
-                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .filter(validRow)
+                .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("elra_Prepay_lines = " + elra_Prepay_lines.size());
         //
         Map<String, List<CustomerEvent>> elra_lines = Files.readAllLines(Paths.get(ELRA_filename), CHARSET)
@@ -251,9 +257,10 @@ public class FileComparator_billing {
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > ELRA_MSISDN_index ? s.split(SPLITTER)[ELRA_MSISDN_index] : "";
                     String activationDate = s.split(SPLITTER).length > ELRA_DATE_index ? s.split(SPLITTER)[ELRA_DATE_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", s + " elra_lines");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), "", "elra_lines");
                 })
-                .filter(validRow).filter(activationDateFilter).filter(e -> !IGNORE_LIST.contains(e.getStatus())).collect(Collectors.groupingBy(l -> l.getMSISDN()));
+                .filter(validRow)
+                .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("elra_lines = " + elra_lines.size());
         VODAFONE_DB_Lines.putAll(SB_HRS_lines);
         VODAFONE_DB_Lines.putAll(elra_Prepay_lines);
@@ -266,7 +273,7 @@ public class FileComparator_billing {
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > VODAFONE_SPLIT_MSISDN_index ? s.split(SPLITTER)[VODAFONE_SPLIT_MSISDN_index] : "";
                     //System.out.println("VODAFONE_SPLIT_Lines line="+msisdn);
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_SPLIT");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "VODAFONE_SPLIT");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_SPLIT_Lines = " + VODAFONE_SPLIT_Lines.size());
@@ -276,7 +283,7 @@ public class FileComparator_billing {
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > VODAFONE_PREPAY_MSISDN_index ? s.split(SPLITTER)[VODAFONE_PREPAY_MSISDN_index] : "";
                     //System.out.println("VODAFONE_PREPAY_Lines line="+msisdn);
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_PREPAY");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "VODAFONE_PREPAY");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_PREPAY_Lines = " + VODAFONE_PREPAY_Lines.size());
@@ -285,7 +292,7 @@ public class FileComparator_billing {
                 .stream()
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > VODAFONE_MOBILE_MSISDN_index ? s.split(SPLITTER)[VODAFONE_MOBILE_MSISDN_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_MOBILE");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "VODAFONE_MOBILE");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_MOBILE_Lines = " + VODAFONE_MOBILE_Lines.size());
@@ -294,7 +301,7 @@ public class FileComparator_billing {
                 .stream()
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > VODAFONE_FIX_MSISDN_index ? s.split(SPLITTER)[VODAFONE_FIX_MSISDN_index] : "";
-                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", s + " VODAFONE_FIX");
+                    return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "VODAFONE_FIX");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("VODAFONE_FIX_Lines = " + VODAFONE_FIX_Lines.size());
@@ -305,9 +312,10 @@ public class FileComparator_billing {
         VODAFONE_BILLING_Lines.putAll(VODAFONE_FIX_Lines);
     }
 
-    public Set<CustomerEvent> LEFT_only(Map<String, List<CustomerEvent>> M1, Map<String, List<CustomerEvent>> M2) throws IOException {
+    public Set<CustomerEvent> LEFT_only(Map<String, List<CustomerEvent>> M1, Map<String, List<CustomerEvent>> M2,Predicate<CustomerEvent> myFilter) throws IOException {
         return M1.values().stream()
                 .flatMap(l -> l.stream())
+                .filter(myFilter)
                 .filter(e -> !M2.containsKey(e.getMSISDN()))
                 .collect(toSet());
     }
@@ -334,27 +342,28 @@ public class FileComparator_billing {
         return true;
     }
 
-    public Set<CustomerEvent> getInvalidBaseRows() throws IOException {
-        return HRS_DB_Lines.values()
-                .stream()
-                .flatMap(l -> l.stream())
-                .filter(invalidRow)
-                // .peek(s->System.out.println("invalid ---->"+s))
-                .collect(toSet());
-    }
 
     public void report() throws IOException {
 
     }
 
-    public void report_HRS_DB_YES_HRS_BILLING_NO(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, HRS_BILLING_Lines);
+    public void report_HRS_DB_YES_HRS_BILLING_NO(JspWriter out) throws IOException {       
+        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, HRS_BILLING_Lines, myDBFilter);
         //---
-        out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
         out.println("<p>" + "HRS_BILLING records : " + HRS_BILLING_Lines.size());
+        //---
+        Map<String, Long> atlantis_statuses = mySet.stream()
+                .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+        atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            try {
+                out.println("<p>        " + e.getValue() + " found. Reason:" + e.getKey() + " - " + statuses.get(e.getKey()));
+            } catch (IOException ex) {
+            }
+        });
         //---        
         mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
                 .forEach(s -> {
@@ -366,9 +375,9 @@ public class FileComparator_billing {
     }
 
     public void report_HRS_DB_NO_HRS_BILLING_YES(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, HRS_DB_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, HRS_DB_Lines, e->true);
         //---
-        out.println("<h1> Numbers that exist in HRS Billing but not in HRS Database "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in HRS Billing but not in HRS Database " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
@@ -385,14 +394,23 @@ public class FileComparator_billing {
 
     //--------------------------------
     public void report_VOD_DB_YES_VOD_BILLING_NO(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, VODAFONE_BILLING_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, VODAFONE_BILLING_Lines, myDBFilter);
         //---VODAFONE_DB_Lines, VODAFONE_BILLING_Lines
-        out.println("<h1> Numbers that exist in Vodafon DB but not in Vodafon Billing "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in Vodafon DB but not in Vodafon Billing " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
         out.println("<p>" + "VODAFONE_DB records (Atlantis) : " + VODAFONE_DB_Lines.size());
         out.println("<p>" + "VODAFONE_BILLING records : " + VODAFONE_BILLING_Lines.size());
+        //---
+        Map<String, Long> atlantis_statuses = mySet.stream()
+                .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+        atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            try {
+                out.println("<p>        " + e.getValue() + " found. Reason:" + e.getKey() + " - " + statuses.get(e.getKey()));
+            } catch (IOException ex) {
+            }
+        });
         //---        
         mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
                 .forEach(s -> {
@@ -404,9 +422,9 @@ public class FileComparator_billing {
     }
 
     public void report_VOD_DB_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_BILLING_Lines, VODAFONE_DB_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_BILLING_Lines, VODAFONE_DB_Lines, e->true);
         //---VODAFONE_DB_Lines, VODAFONE_BILLING_Lines
-        out.println("<h1> Numbers that exist in Vodafon Billing but not in Vodafon DB "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in Vodafon Billing but not in Vodafon DB " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
@@ -424,9 +442,9 @@ public class FileComparator_billing {
 
     //--------------------------------
     public void report_HRS_BILLING_YES_VOD_BILLING_NO(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines, e->true);
         //---
-        out.println("<h1> Numbers that exist in HRS Billing but not in Vodafon Billing "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in HRS Billing but not in Vodafon Billing " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "VODAFONE_BILLING records (Atlantis) : " + VODAFONE_BILLING_Lines.size());
@@ -439,11 +457,12 @@ public class FileComparator_billing {
                     } catch (IOException ex) {
                     }
                 });
-    }    
+    }
+
     public void report_HRS_BILLING_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines, e->true);
         //---
-        out.println("<h1> Numbers that exist in Vodafon Billing but not in HRS Billing "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in Vodafon Billing but not in HRS Billing " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "VODAFONE_BILLING records (Atlantis) : " + VODAFONE_BILLING_Lines.size());
@@ -456,16 +475,26 @@ public class FileComparator_billing {
                     } catch (IOException ex) {
                     }
                 });
-    }    
+    }
+
     //---------------------------------------------
     public void report_HRS_DB_YES_VOD_DB_NO(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, VODAFONE_DB_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, VODAFONE_DB_Lines, myDBFilter);
         //---
-        out.println("<h1> Numbers that exist in HRS DB but not in Vodafon DB "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist in HRS DB but not in Vodafon DB " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
         out.println("<p>" + "VODAFONE_DB records : " + VODAFONE_DB_Lines.size());
+        //---
+        Map<String, Long> atlantis_statuses = mySet.stream()
+                .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
+        atlantis_statuses.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
+            try {
+                out.println("<p>        " + e.getValue() + " found. Reason:" + e.getKey() + " - " + statuses.get(e.getKey()));
+            } catch (IOException ex) {
+            }
+        });
         //---        
         mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
                 .forEach(s -> {
@@ -477,9 +506,9 @@ public class FileComparator_billing {
     }
 
     public void report_HRS_DB_NO_VOD_DB_YES(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, HRS_DB_Lines);
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, HRS_DB_Lines, myDBFilter);
         //---
-        out.println("<h1> Numbers that exist ONLY in Vodafon DB but not in HRS DB "+mySet.size()+"</h1>");
+        out.println("<h1> Numbers that exist ONLY in Vodafon DB but not in HRS DB " + mySet.size() + "</h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);

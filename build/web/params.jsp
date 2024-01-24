@@ -67,8 +67,8 @@
             }
             //---------- dir is not null ----------
             String directory = request.getParameter("directory");
-out.println("<a href='javascript:history.back()'>Go Back</a>");
- 
+            out.println("<a href='javascript:history.back()'>Go Back</a>");
+
             if (request.getParameter("compare_or_save") != null) {
                 params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
                 FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
@@ -119,7 +119,7 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,                   name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,                       name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -139,13 +139,13 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
         <h1>directory: <%=directory%></h1>
         <form action="params.jsp" method="POST" id="myForm" >
             <p><input type="submit" name="report_HRS_DB_YES_HRS_BILLING_NO" value="Only in HRS Database not in HRS Billing" />
-            <input type="submit" name="report_HRS_DB_NO_HRS_BILLING_YES" value="Only in HRS Billing not in HRS Database" />
+                <input type="submit" name="report_HRS_DB_NO_HRS_BILLING_YES" value="Only in HRS Billing not in HRS Database" />
             <p><input type="submit" name="report_VOD_DB_YES_VOD_BILLING_NO" value="Only in Vodafon DB not in Vodafon Billing" />
-            <input type="submit" name="report_VOD_DB_NO_VOD_BILLING_YES" value="Only in Vodafon Billing not in Vodafon DB" />
+                <input type="submit" name="report_VOD_DB_NO_VOD_BILLING_YES" value="Only in Vodafon Billing not in Vodafon DB" />
             <p><input type="submit" name="report_HRS_BILLING_YES_VOD_BILLING_NO" value="Only in HRS Billing not in Vodafon Billing" />
-            <input type="submit" name="report_HRS_BILLING_NO_VOD_BILLING_YES" value="Only in Vodafon Billing not in HRS Billing" />
+                <input type="submit" name="report_HRS_BILLING_NO_VOD_BILLING_YES" value="Only in Vodafon Billing not in HRS Billing" />
             <p><input type="submit" name="report_HRS_DB_YES_VOD_DB_NO" value="Only in HRS DB not in Vodafon DB" />
-            <input type="submit" name="report_HRS_DB_NO_VOD_DB_YES" value="Only in Vodafon DB not in HRS DB" />
+                <input type="submit" name="report_HRS_DB_NO_VOD_DB_YES" value="Only in Vodafon DB not in HRS DB" />
             <p><input type="submit" name="save" value="Save parameters" />
                 <input type="hidden" name="directory" value="<%=directory%>" />
                 <input type="hidden" name="compare_or_save" value="compare_or_save" />
@@ -181,7 +181,7 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
                                     }
                                 %>
                             </select>                      
-                            <p>HRS_BILLING_MSISDN_index : <input type="text" size="2" size="2" name="HRS_BILLING_MSISDN_index" value="<%=myProperties.getProperty("HRS_BILLING_MSISDN_index")%>" />
+                        <p>HRS_BILLING_MSISDN_index : <input type="text" size="2" size="2" name="HRS_BILLING_MSISDN_index" value="<%=myProperties.getProperty("HRS_BILLING_MSISDN_index")%>" />
 
 
                     </td></tr><tr><td>
@@ -268,7 +268,8 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
                             %>
                         </select>                        
                         <p>FIX_MSISDN_index  : <input type="text" size="2" name="VODAFONE_FIX_MSISDN_index" value="<%=myProperties.getProperty("VODAFONE_FIX_MSISDN_index")%>" />
-                        <p>FIX_CIRCUIT_index  : <input type="text" size="2" name="VODAFONE_FIX_CIRCUIT_index" value="<%=myProperties.getProperty("VODAFONE_FIX_CIRCUIT_index")%>" />       
+                        <p>FIX_CIRCUIT_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index)%>" />   
+                        <p>FIX_CIRCUIT_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index)%>" />       
                     </td></tr>
             </table>
         </form>
@@ -277,43 +278,5 @@ out.println("<a href='javascript:history.back()'>Go Back</a>");
 
 
 <!--
-        #
-    CHARSET 
-    SPLITTER = 
-    MAX_ACTIVATION_DATE 
-    #
-    List IGNORE_LIST 
-    # HRS files</h1>
-    ATLANTIS_filename 
-    ATLANTIS_MSISDN_index 
-    ATLANTIS_MSISDN2_index 
-    ATLANTIS_DATE_index
-    ATLANTIS_STATUS_index 
-    #-------- Vodafon files
-    SB_HRS_filename 
-    SB_HRS_MSISDN_index
-    SB_HRS_DATE_index 
-    #
-    ELRA_filename 
-    ELRA_MSISDN_index
-    ELRA_DATE_index 
-    #
-    ELRA_PREPAY_filename
-    ELRA_PREPAY_MSISDN_index 
-    ELRA_PREPAY_DATE_index 
-        #
-    VODAFONE_SPLIT_filename
-    VODAFONE_SPLIT_MSISDN_index
-    #
-    VODAFONE_PREPAY_filename 
-    VODAFONE_PREPAY_MSISDN_index 
-    #
-    VODAFONE_MOBILE_filename 
-    VODAFONE_MOBILE_MSISDN_index 
-    #
-    VODAFONE_FIX_filename 
-    VODAFONE_FIX_MSISDN_index 
-    VODAFONE_FIX_CIRCUIT_index 
-
 
 -->
