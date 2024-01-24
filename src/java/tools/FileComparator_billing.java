@@ -1,6 +1,8 @@
 package tools;
 
-import java.io.FileWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
-import static java.util.Comparator.comparing;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,8 @@ public class FileComparator_billing {
     //-------
     private Map<String, List<CustomerEvent>> VODAFONE_BILLING_Lines = new HashMap();
     private Map<String, List<CustomerEvent>> VODAFONE_DB_Lines = new HashMap();
+    private Map<String, List<CustomerEvent>> HRS_DB_Lines = new HashMap();
+    private Map<String, List<CustomerEvent>> HRS_BILLING_Lines = new HashMap();
     Map<String, String> statuses = new HashMap();
     //-----------------------
     Charset CHARSET = Charset.forName("ISO-8859-7");//StandardCharsets.ISO_8859_1;
@@ -112,8 +115,6 @@ public class FileComparator_billing {
     String VODAFONE_FIX_filename;
     int VODAFONE_FIX_MSISDN_index;
     int VODAFONE_FIX_CIRCUIT_index;
-    //
-    private Map<String, List<CustomerEvent>> HRS_ALL_Lines = new HashMap();
     //
     Predicate<CustomerEvent> validRow = s -> isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
     Predicate<CustomerEvent> invalidRow = s -> !(isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty());
@@ -209,11 +210,11 @@ public class FileComparator_billing {
                 .filter(validRow).filter(activationDateFilter).filter(e -> !e.getMSISDN().isEmpty() && !IGNORE_LIST.contains(e.getStatus()))
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
         System.out.println("ATLANTIS_2ndlines = " + ATLANTIS_2ndlines.size());
-        HRS_ALL_Lines.putAll(ATLANTIS_2ndlines);
-        HRS_ALL_Lines.putAll(ATLANTIS_lines);
+        HRS_DB_Lines.putAll(ATLANTIS_2ndlines);
+        HRS_DB_Lines.putAll(ATLANTIS_lines);
         System.out.println("ATLANTIS_lines total = " + ATLANTIS_lines.size());
         System.out.println("------------- HRS Billing files----");
-        Map<String, List<CustomerEvent>> HRS_BILLING_Lines = Files.readAllLines(Paths.get(HRS_BILLING_filename), CHARSET)
+        HRS_BILLING_Lines = Files.readAllLines(Paths.get(HRS_BILLING_filename), CHARSET)
                 .stream()
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > HRS_BILLING_MSISDN_index ? s.split(SPLITTER)[HRS_BILLING_MSISDN_index] : "";
@@ -304,22 +305,6 @@ public class FileComparator_billing {
         VODAFONE_BILLING_Lines.putAll(VODAFONE_FIX_Lines);
     }
 
-    public Set<CustomerEvent> HRS_NO_BILLING() throws IOException {
-        return LEFT_only(HRS_ALL_Lines, VODAFONE_BILLING_Lines);
-    }
-
-    public Set<CustomerEvent> HRS_NO_VODDB() throws IOException {
-        return LEFT_only(HRS_ALL_Lines, VODAFONE_DB_Lines);
-    }
-
-    public Set<CustomerEvent> VODAFON_BILLING_only() throws IOException {
-        return LEFT_only(VODAFONE_BILLING_Lines, HRS_ALL_Lines);
-    }
-
-    public Set<CustomerEvent> VODAFON_DB_only() throws IOException {
-        return LEFT_only(VODAFONE_DB_Lines, HRS_ALL_Lines);
-    }
-
     public Set<CustomerEvent> LEFT_only(Map<String, List<CustomerEvent>> M1, Map<String, List<CustomerEvent>> M2) throws IOException {
         return M1.values().stream()
                 .flatMap(l -> l.stream())
@@ -350,7 +335,7 @@ public class FileComparator_billing {
     }
 
     public Set<CustomerEvent> getInvalidBaseRows() throws IOException {
-        return HRS_ALL_Lines.values()
+        return HRS_DB_Lines.values()
                 .stream()
                 .flatMap(l -> l.stream())
                 .filter(invalidRow)
@@ -359,151 +344,159 @@ public class FileComparator_billing {
     }
 
     public void report() throws IOException {
-        Set<CustomerEvent> myInvalidRows = getInvalidBaseRows();
-        Set<CustomerEvent> HRS_NO_VODDB = HRS_NO_VODDB();
-        Set<CustomerEvent> HRS_NO_BILLING = HRS_NO_BILLING();
-        Set<CustomerEvent> VODAFON_BILLING_only = VODAFON_BILLING_only();
-        Set<CustomerEvent> VODAFON_DB_only = VODAFON_DB_only();
 
+    }
+
+    public void report_HRS_DB_YES_HRS_BILLING_NO(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, HRS_BILLING_Lines);
         //---
-        System.out.println();
-        System.out.println("*************** SUMMARY ***********");
-        System.out.println("IGNORE_LIST:" + IGNORE_LIST);
-        System.out.println("\nHRS records (Atlantis) : " + HRS_ALL_Lines.size());
-        System.out.println("VODAFONE DB records : " + VODAFONE_DB_Lines.size());
-        System.out.println("VODAFONE BILLING records: " + VODAFONE_BILLING_Lines.size());
-        //---
-        //System.out.println("\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
-        {
-            System.out.println("\n\nNumbers that exist in HRS but not in Vod Billing : " + HRS_NO_BILLING.size());
-            Map<String, Long> statusList = HRS_NO_BILLING.stream()
-                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-                System.out.println("        " + e.getValue() + " - " + statuses.get(e.getKey()));
-            });
-        }
-        //---
-        System.out.println("\nNumbers that exist ONLY in VOD BILLING but not in HRS: " + VODAFON_BILLING_only.size());
-        //---
-        {
-            System.out.println("\nNumbers that exist in HRS but not in Vod DB : " + HRS_NO_VODDB.size());
-            Map<String, Long> statusList = HRS_NO_VODDB.stream()
-                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-                System.out.println("        " + e.getValue() + " - " + statuses.get(e.getKey()));
-            });
-        }
+        out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
+        out.println("<p>" + "HRS_BILLING records : " + HRS_BILLING_Lines.size());
         //---        
-        System.out.println("\nNumbers that exist ONLY in VOD DB but not in HRS : " + VODAFON_DB_only.size());
-        //-----------
-        System.out.println();
-        System.out.println("\n\n\n\n***************************************************************");
-        System.out.println("*** DETAILS ***");
-        System.out.println("***************************************************************");
-        //---------
-        System.out.println("\n\n*** Numbers that exist in HRS but not in Vod Billing, details ***");
-        HRS_NO_BILLING.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> System.out.println("  HRS_NO_BILLING: " + s.getMSISDN() + " : " + s));
-        //----------       
-        System.out.println("\n\n*** umbers that exist ONLY in VOD BILLING but not in HRS, details ***");
-        VODAFON_BILLING_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> System.out.println("  VODAFON_BILLING_only-> " + s.getMSISDN() + " : " + s));
-        //----------
-        System.out.println("\n\n*** Numbers that exist in HRS but not in Vod DB, details ***");
-        HRS_NO_VODDB.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> System.out.println("  HRS_NO_VODDB: " + s.getMSISDN() + " : " + s));
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }
 
-        //----------        
-        System.out.println("\n\n*** Numbers that exist ONLY in VOD DB but not in HRS, details ***");
-        VODAFON_DB_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> System.out.println("  VODAFON_DB_only-> " + s.getMSISDN() + " : " + s));
+    public void report_HRS_DB_NO_HRS_BILLING_YES(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, HRS_DB_Lines);
+        //---
+        out.println("<h1> Numbers that exist in HRS Billing but not in HRS Database "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
+        out.println("<p>" + "HRS_BILLING records : " + HRS_BILLING_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }
+
+    //--------------------------------
+    public void report_VOD_DB_YES_VOD_BILLING_NO(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, VODAFONE_BILLING_Lines);
+        //---VODAFONE_DB_Lines, VODAFONE_BILLING_Lines
+        out.println("<h1> Numbers that exist in Vodafon DB but not in Vodafon Billing "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
+        out.println("<p>" + "VODAFONE_DB records (Atlantis) : " + VODAFONE_DB_Lines.size());
+        out.println("<p>" + "VODAFONE_BILLING records : " + VODAFONE_BILLING_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }
+
+    public void report_VOD_DB_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_BILLING_Lines, VODAFONE_DB_Lines);
+        //---VODAFONE_DB_Lines, VODAFONE_BILLING_Lines
+        out.println("<h1> Numbers that exist in Vodafon Billing but not in Vodafon DB "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
+        out.println("<p>" + "VODAFONE_DB records (Atlantis) : " + VODAFONE_DB_Lines.size());
+        out.println("<p>" + "VODAFONE_BILLING records : " + VODAFONE_BILLING_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }
+
+    //--------------------------------
+    public void report_HRS_BILLING_YES_VOD_BILLING_NO(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines);
+        //---
+        out.println("<h1> Numbers that exist in HRS Billing but not in Vodafon Billing "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        out.println("<p>" + "VODAFONE_BILLING records (Atlantis) : " + VODAFONE_BILLING_Lines.size());
+        out.println("<p>" + "HRS_BILLING records : " + HRS_BILLING_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }    
+    public void report_HRS_BILLING_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(HRS_BILLING_Lines, VODAFONE_BILLING_Lines);
+        //---
+        out.println("<h1> Numbers that exist in Vodafon Billing but not in HRS Billing "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        out.println("<p>" + "VODAFONE_BILLING records (Atlantis) : " + VODAFONE_BILLING_Lines.size());
+        out.println("<p>" + "HRS_BILLING records : " + HRS_BILLING_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }    
+    //---------------------------------------------
+    public void report_HRS_DB_YES_VOD_DB_NO(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(HRS_DB_Lines, VODAFONE_DB_Lines);
+        //---
+        out.println("<h1> Numbers that exist in HRS DB but not in Vodafon DB "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
+        out.println("<p>" + "VODAFONE_DB records : " + VODAFONE_DB_Lines.size());
+        //---        
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
+    }
+
+    public void report_HRS_DB_NO_VOD_DB_YES(JspWriter out) throws IOException {
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_DB_Lines, HRS_DB_Lines);
+        //---
+        out.println("<h1> Numbers that exist ONLY in Vodafon DB but not in HRS DB "+mySet.size()+"</h1>");
+        out.println();
+        out.println("<p>" + "*************** SUMMARY ***********");
+        //out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
+        out.println("<p>" + "HRS DB records : " + HRS_DB_Lines.size());
+        out.println("<p>" + "VODAFONE DB records : " + VODAFONE_DB_Lines.size());
+        //---               
+        mySet.stream().sorted(Comparator.comparing(s -> s.getStatus()))
+                .forEach(s -> {
+                    try {
+                        out.println("<p>" + s.getMSISDN() + " : " + s);
+                    } catch (IOException ex) {
+                    }
+                });
     }
 
     public void report(JspWriter out) throws IOException {
-        Set<CustomerEvent> myInvalidRows = getInvalidBaseRows();
-        Set<CustomerEvent> HRS_NO_VODDB = HRS_NO_VODDB();
-        Set<CustomerEvent> HRS_NO_BILLING = HRS_NO_BILLING();
-        Set<CustomerEvent> VODAFON_BILLING_only = VODAFON_BILLING_only();
-        Set<CustomerEvent> VODAFON_DB_only = VODAFON_DB_only();
 
-        //---
-        out.println();
-        out.println("<p>" + "*************** SUMMARY ***********");
-        out.println("<p>" + "IGNORE_LIST:" + IGNORE_LIST);
-        out.println("<p>" + "HRS records (Atlantis) : " + HRS_ALL_Lines.size());
-        out.println("<p>" + "VODAFONE DB records : " + VODAFONE_DB_Lines.size());
-        out.println("<p>" + "VODAFONE BILLING records: " + VODAFONE_BILLING_Lines.size());
-        //---
-        //System.out.println("<p>"+"\nINVALID ATLANTIS rows found: " + myInvalidRows.size());
-        {
-            out.println("<h1>" + "Numbers that exist in HRS but not in Vod Billing : " + HRS_NO_BILLING.size() + "</h1>");
-            Map<String, Long> statusList = HRS_NO_BILLING.stream()
-                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-                try {
-                    out.println("<p>" + "        " + e.getValue() + " - " + statuses.get(e.getKey()));
-                } catch (Exception ex) {
-                }
-            });
-        }
-        //---
-        out.println("<h1>" + "Numbers that exist ONLY in VOD BILLING but not in HRS: " + VODAFON_BILLING_only.size() + "</h1>");
-        //---
-        {
-            out.println("<p>" + "\nNumbers that exist in HRS but not in Vod DB : " + HRS_NO_VODDB.size());
-            Map<String, Long> statusList = HRS_NO_VODDB.stream()
-                    .collect(Collectors.groupingBy(s -> s.getStatus(), Collectors.counting()));
-            statusList.entrySet().stream().sorted(comparing(e -> -e.getValue())).forEach(e -> {
-                try {
-                    out.println("<p>" + "        " + e.getValue() + " - " + statuses.get(e.getKey()));
-                } catch (Exception ex) {
-                }
-            });
-        }
-        //---        
-        out.println("<h1>" + "\nNumbers that exist ONLY in VOD DB but not in HRS : " + VODAFON_DB_only.size() + "</h1>");
-        //-----------
-        out.println("<p>");
-        out.println("<p>" + "***************************************************************");
-        out.println("<p>" + "*** DETAILS ***");
-        out.println("<p>" + "***************************************************************");
-        //---------
-        out.println("<p>" + "\n\n*** Numbers that exist in HRS but not in Vod Billing, details ***");
-        HRS_NO_BILLING.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> {
-                    try {
-                        out.println("<p>" + "  HRS_NO_BILLING: " + s.getMSISDN() + " : " + s);
-                    } catch (IOException ex) {
-                    }
-                });
-        //----------       
-        out.println("<p>" + "\n\n*** umbers that exist ONLY in VOD BILLING but not in HRS, details ***");
-        VODAFON_BILLING_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> {
-                    try {
-                        out.println("<p>" + "  VODAFON_BILLING_only-> " + s.getMSISDN() + " : " + s);
-                    } catch (IOException ex) {
-                    }
-                });
-        //----------
-        out.println("<p>" + "\n\n*** Numbers that exist in HRS but not in Vod DB, details ***");
-        HRS_NO_VODDB.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> {
-                    try {
-                        out.println("<p>" + "  HRS_NO_VODDB: " + s.getMSISDN() + " : " + s);
-                    } catch (IOException ex) {
-                    }
-                });
-
-        //----------        
-        out.println("<p>" + "\n\n*** Numbers that exist ONLY in VOD DB but not in HRS, details ***");
-        VODAFON_DB_only.stream().sorted(Comparator.comparing(s -> s.getStatus()))
-                .forEach(s -> {
-                    try {
-                        out.println("<p>" + "  VODAFON_DB_only-> " + s.getMSISDN() + " : " + s);
-                    } catch (IOException ex) {
-                    }
-                });
     }
 
     private static String formatDate(String activationDate) {
@@ -530,48 +523,11 @@ public class FileComparator_billing {
     public static void main(String[] args) {
         System.out.println(formatDate("9/5/2014"));
         Properties myProperties = new Properties();
-        //-----------------------
-        myProperties.put(FileComparator_billing.FileComparator_CHARSET, "ISO-8859-7");//StandardCharsets.ISO_8859_1;
-        myProperties.put(FileComparator_billing.FileComparator_SPLITTER, ";");
-        myProperties.put(FileComparator_billing.FileComparator_MAX_ACTIVATION_DATE, "20231030T000000");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_IGNORE_LIST, "13, 6, 69, 72, 23, 75, 57, 4, 33, 24, 20, 19, 76");
-        //------------------ HRS files ------------------------
-        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΒΑΣΗ HRS ATLANTIS.csv");
-        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_MSISDN_index, "3");
-        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_MSISDN2_index, "6");
-        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_DATE_index, "11");
-        myProperties.put(FileComparator_billing.FileComparator_ATLANTIS_STATUS_index, "10");
-        //-------------------------- Vodafon files ----------------------------------------------
-        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\SB_HRS_November_2023 new.csv");
-        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_MSISDN_index, "3");
-        myProperties.put(FileComparator_billing.FileComparator_SB_HRS_DATE_index, "5");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra.csv");
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_MSISDN_index, "1");
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_DATE_index, "4");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\elra_Prepay.csv");
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_MSISDN_index, "5");
-        myProperties.put(FileComparator_billing.FileComparator_ELRA_PREPAY_DATE_index, "3");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_SPLIT_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ SPLIT VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index, "3");
-
-        //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_PREPAY_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΑΡΤΟΚΙΝΗΤΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index, "3");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_MOBILE_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΚΙΝΗΤΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index, "3");
-        //
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_filename, "C:\\myfiles\\data\\HRSTools\\data\\november_2023\\csv\\ΝΟΕΜΒΡΙΟΣ ΣΤΑΘΕΡΗ VODAFONE.csv");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index, "5");
-        myProperties.put(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index, "6");
-        //---------------
-        System.out.println(myProperties);
         try {
-            myProperties.store(new FileWriter("C:\\myfiles\\data\\HRSTools\\conf\\params.properties"), "utf-8");
+            //-----------------------
+            myProperties.load(new FileReader(new File("C:\\myfiles\\data\\HRSTools\\data\\ΔΕΚ-23\\parameters.properties"), StandardCharsets.UTF_8));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
         }

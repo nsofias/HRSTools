@@ -106,12 +106,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                         }
                     });
             //
-
             if (request.getParameter("directory") == null) {
                 File dir = new File(main_dir);
                 List<String> filenames = Arrays.asList(dir.list());
         
-      out.write("      \n");
+      out.write("            \n");
       out.write("        <form action=\"params.jsp\" method=\"GET\" id=\"myForm\" enctype=\"multipart/form-data\" accept-charset=\"UTF-8\">\n");
       out.write("            Files Directory for files:\n");
       out.write("            <select onchange = \"form.submit()\"name=\"directory\">\n");
@@ -129,37 +128,61 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
 
                 return;
             }
-
             //---------- dir is not null ----------
             String directory = request.getParameter("directory");
-            //-------------- compare -----------------
-            if (request.getParameter("compare") != null) {
-                params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                        .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-                FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
-                myProperties.store(myFileWriter, "");
-                //**************************
+out.println("<a href='javascript:history.back()'>Go Back</a>");
+ 
+            if (request.getParameter("compare_or_save") != null) {
+                params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
                 FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
                 try {
                     myFileComparator.loadFiles();
-                    myFileComparator.report(out);
                 } catch (IOException ex) {
-                    Logger.getLogger(FileComparator_billing.class.getName()).log(Level.SEVERE, null, ex);
+                    out.println(ex);
                 }
-                //****************************
-                return;
-            }
-            if (request.getParameter("save") != null) {
-                params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                        .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-                FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
-                out.println("saved to:" + main_dir + directory + "\\parameters.properties");
-                myProperties.store(myFileWriter, "");
+                //-------------- compare -----------------
+                if (request.getParameter("report_HRS_DB_YES_HRS_BILLING_NO") != null) {
+                    myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
+                    return;
+                } else if (request.getParameter("report_HRS_DB_NO_HRS_BILLING_YES") != null) {
+                    myFileComparator.report_HRS_DB_NO_HRS_BILLING_YES(out);
+                    return;
+                } else if (request.getParameter("report_VOD_DB_YES_VOD_BILLING_NO") != null) {
+                    myFileComparator.report_VOD_DB_YES_VOD_BILLING_NO(out);
+                    return;
+                } else if (request.getParameter("report_VOD_DB_NO_VOD_BILLING_YES") != null) {
+                    myFileComparator.report_VOD_DB_NO_VOD_BILLING_YES(out);
+                    return;
+
+                } else if (request.getParameter("report_HRS_BILLING_YES_VOD_BILLING_NO") != null) {
+                    myFileComparator.report_HRS_BILLING_YES_VOD_BILLING_NO(out);
+                    return;
+
+                } else if (request.getParameter("report_HRS_BILLING_NO_VOD_BILLING_YES") != null) {
+                    myFileComparator.report_HRS_BILLING_NO_VOD_BILLING_YES(out);
+                    return;
+
+                } else if (request.getParameter("report_HRS_DB_YES_VOD_DB_NO") != null) {
+                    myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
+                    return;
+
+                } else if (request.getParameter("report_HRS_DB_NO_VOD_DB_YES") != null) {
+                    myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
+                    return;
+                }
+                //---------save-----------
+                if (request.getParameter("save") != null) {
+                    params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                            .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+                    FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+                    out.println("saved to:" + main_dir + directory + "\\parameters.properties");
+                    myProperties.store(myFileWriter, "");
+                }
             }
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,       name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,                   name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -177,16 +200,23 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
 
         
       out.write("\n");
-      out.write("\n");
       out.write("        <h1>directory: ");
       out.print(directory);
       out.write("</h1>\n");
       out.write("        <form action=\"params.jsp\" method=\"POST\" id=\"myForm\" >\n");
-      out.write("            <input type=\"submit\" name=\"compare\" value=\"Compare\" />\n");
-      out.write("            <input type=\"submit\" name=\"save\" value=\"Save parameters\" />\n");
-      out.write("            <input type=\"hidden\" name=\"directory\" value=\"");
+      out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_HRS_BILLING_NO\" value=\"Only in HRS Database not in HRS Billing\" />\n");
+      out.write("            <input type=\"submit\" name=\"report_HRS_DB_NO_HRS_BILLING_YES\" value=\"Only in HRS Billing not in HRS Database\" />\n");
+      out.write("            <p><input type=\"submit\" name=\"report_VOD_DB_YES_VOD_BILLING_NO\" value=\"Only in Vodafon DB not in Vodafon Billing\" />\n");
+      out.write("            <input type=\"submit\" name=\"report_VOD_DB_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in Vodafon DB\" />\n");
+      out.write("            <p><input type=\"submit\" name=\"report_HRS_BILLING_YES_VOD_BILLING_NO\" value=\"Only in HRS Billing not in Vodafon Billing\" />\n");
+      out.write("            <input type=\"submit\" name=\"report_HRS_BILLING_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in HRS Billing\" />\n");
+      out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_VOD_DB_NO\" value=\"Only in HRS DB not in Vodafon DB\" />\n");
+      out.write("            <input type=\"submit\" name=\"report_HRS_DB_NO_VOD_DB_YES\" value=\"Only in Vodafon DB not in HRS DB\" />\n");
+      out.write("            <p><input type=\"submit\" name=\"save\" value=\"Save parameters\" />\n");
+      out.write("                <input type=\"hidden\" name=\"directory\" value=\"");
       out.print(directory);
       out.write("\" />\n");
+      out.write("                <input type=\"hidden\" name=\"compare_or_save\" value=\"compare_or_save\" />\n");
       out.write("            <table>\n");
       out.write("                <tr><td>\n");
       out.write("                        <p>CHARSET  : <input type=\"text\" size=\"10\" name=\"CHARSET\" value=\"");
@@ -239,8 +269,8 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                                 
       out.write("\n");
       out.write("                            </select>                      \n");
-      out.write("                        <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("ATLANTIS_MSISDN_index"));
+      out.write("                            <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
+      out.print(myProperties.getProperty("HRS_BILLING_MSISDN_index"));
       out.write("\" />\n");
       out.write("\n");
       out.write("\n");
