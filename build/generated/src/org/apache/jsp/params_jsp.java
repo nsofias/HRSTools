@@ -87,6 +87,15 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("    <head>\n");
       out.write("        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n");
       out.write("        <title>JSP Page</title>\n");
+      out.write("        <style>\n");
+      out.write("            table, th, td {\n");
+      out.write("                border: 1px solid white;\n");
+      out.write("                border-collapse: collapse;\n");
+      out.write("            }\n");
+      out.write("            th, td {\n");
+      out.write("                background-color: #96D4D4;\n");
+      out.write("            }\n");
+      out.write("        </style>\n");
       out.write("    </head>\n");
       out.write("    <body>\n");
       out.write("        ");
@@ -131,8 +140,8 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
             //---------- dir is not null ----------
             String directory = request.getParameter("directory");
             out.println("<a href='javascript:history.back()'>Go Back</a>");
-
-            if (request.getParameter("compare_or_save") != null) {
+            String report_type = request.getParameter("report_type");
+            if (report_type != null) {
                 params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
                 FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
                 try {
@@ -141,34 +150,36 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                     out.println(ex);
                 }
                 //-------------- compare -----------------
-                if (request.getParameter("report_HRS_DB_YES_HRS_BILLING_NO") != null) {
-                    myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
-                    return;
-                } else if (request.getParameter("report_HRS_DB_NO_HRS_BILLING_YES") != null) {
-                    myFileComparator.report_HRS_DB_NO_HRS_BILLING_YES(out);
-                    return;
-                } else if (request.getParameter("report_VOD_DB_YES_VOD_BILLING_NO") != null) {
-                    myFileComparator.report_VOD_DB_YES_VOD_BILLING_NO(out);
-                    return;
-                } else if (request.getParameter("report_VOD_DB_NO_VOD_BILLING_YES") != null) {
-                    myFileComparator.report_VOD_DB_NO_VOD_BILLING_YES(out);
-                    return;
+                if (request.getParameter("run") != null) {
+                    if (report_type.equals("report_HRS_DB_YES_HRS_BILLING_NO")) {
+                        myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
+                        return;
+                    } else if (report_type.equals("report_HRS_DB_NO_HRS_BILLING_YES")) {
+                        myFileComparator.report_HRS_DB_NO_HRS_BILLING_YES(out);
+                        return;
+                    } else if (report_type.equals("report_VOD_DB_YES_VOD_BILLING_NO")) {
+                        myFileComparator.report_VOD_DB_YES_VOD_BILLING_NO(out);
+                        return;
+                    } else if (report_type.equals("report_VOD_DB_NO_VOD_BILLING_YES")) {
+                        myFileComparator.report_VOD_DB_NO_VOD_BILLING_YES(out);
+                        return;
 
-                } else if (request.getParameter("report_HRS_BILLING_YES_VOD_BILLING_NO") != null) {
-                    myFileComparator.report_HRS_BILLING_YES_VOD_BILLING_NO(out);
-                    return;
+                    } else if (report_type.equals("report_HRS_BILLING_YES_VOD_BILLING_NO")) {
+                        myFileComparator.report_HRS_BILLING_YES_VOD_BILLING_NO(out);
+                        return;
 
-                } else if (request.getParameter("report_HRS_BILLING_NO_VOD_BILLING_YES") != null) {
-                    myFileComparator.report_HRS_BILLING_NO_VOD_BILLING_YES(out);
-                    return;
+                    } else if (report_type.equals("report_HRS_BILLING_NO_VOD_BILLING_YES")) {
+                        myFileComparator.report_HRS_BILLING_NO_VOD_BILLING_YES(out);
+                        return;
 
-                } else if (request.getParameter("report_HRS_DB_YES_VOD_DB_NO") != null) {
-                    myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
-                    return;
+                    } else if (report_type.equals("report_HRS_DB_YES_VOD_DB_NO")) {
+                        myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
+                        return;
 
-                } else if (request.getParameter("report_HRS_DB_NO_VOD_DB_YES") != null) {
-                    myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
-                    return;
+                    } else if (report_type.equals("report_HRS_DB_NO_VOD_DB_YES")) {
+                        myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
+                        return;
+                    }
                 }
                 //---------save-----------
                 if (request.getParameter("save") != null) {
@@ -182,7 +193,7 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
             //-- read csv files of directory 
             File dir = new File(main_dir + directory);
 
-            FilenameFilter filter = ( d,                       name) -> name.endsWith(".csv");
+            FilenameFilter filter = ( d,                                       name) -> name.endsWith(".csv");
             List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
 
             // -- read local properties ---------
@@ -204,37 +215,56 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(directory);
       out.write("</h1>\n");
       out.write("        <form action=\"params.jsp\" method=\"POST\" id=\"myForm\" >\n");
-      out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_HRS_BILLING_NO\" value=\"Only in HRS Database not in HRS Billing\" />\n");
-      out.write("                <input type=\"submit\" name=\"report_HRS_DB_NO_HRS_BILLING_YES\" value=\"Only in HRS Billing not in HRS Database\" />\n");
-      out.write("            <p><input type=\"submit\" name=\"report_VOD_DB_YES_VOD_BILLING_NO\" value=\"Only in Vodafon DB not in Vodafon Billing\" />\n");
-      out.write("                <input type=\"submit\" name=\"report_VOD_DB_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in Vodafon DB\" />\n");
-      out.write("            <p><input type=\"submit\" name=\"report_HRS_BILLING_YES_VOD_BILLING_NO\" value=\"Only in HRS Billing not in Vodafon Billing\" />\n");
-      out.write("                <input type=\"submit\" name=\"report_HRS_BILLING_NO_VOD_BILLING_YES\" value=\"Only in Vodafon Billing not in HRS Billing\" />\n");
-      out.write("            <p><input type=\"submit\" name=\"report_HRS_DB_YES_VOD_DB_NO\" value=\"Only in HRS DB not in Vodafon DB\" />\n");
-      out.write("                <input type=\"submit\" name=\"report_HRS_DB_NO_VOD_DB_YES\" value=\"Only in Vodafon DB not in HRS DB\" />\n");
       out.write("            <p><input type=\"submit\" name=\"save\" value=\"Save parameters\" />\n");
+      out.write("\n");
       out.write("                <input type=\"hidden\" name=\"directory\" value=\"");
       out.print(directory);
       out.write("\" />\n");
-      out.write("                <input type=\"hidden\" name=\"compare_or_save\" value=\"compare_or_save\" />\n");
-      out.write("            <table>\n");
+      out.write("\n");
+      out.write("\n");
+      out.write("                <input type=\"submit\" name=\"run\" value=\"RUN\" />\n");
+      out.write("\n");
+      out.write("            <table >\n");
       out.write("                <tr><td>\n");
-      out.write("                        <p>CHARSET  : <input type=\"text\" size=\"10\" name=\"CHARSET\" value=\"");
-      out.print(myProperties.getProperty("CHARSET"));
+      out.write("                        <p><b>Select Report rype:</b> <select name=\"report_type\">\n");
+      out.write("                    <option value=\"report_HRS_DB_YES_HRS_BILLING_NO\">Only in HRS Database not in HRS Billing</option>\n");
+      out.write("                    <option value=\"report_HRS_DB_NO_HRS_BILLING_YES\">Only in HRS Billing not in HRS Database</option>\n");
+      out.write("                    <option value=\"report_VOD_DB_YES_VOD_BILLING_NO\">Only in Vodafon DB not in Vodafon Billing</option>\n");
+      out.write("                    <option value=\"report_VOD_DB_NO_VOD_BILLING_YES\">Only in Vodafon Billing not in Vodafon DB</option>\n");
+      out.write("                    <option value=\"report_HRS_BILLING_YES_VOD_BILLING_NO\">Only in HRS Billing not in Vodafon Billing</option>\n");
+      out.write("                    <option value=\"report_HRS_BILLING_NO_VOD_BILLING_YES\">Only in Vodafon Billing not in HRS Billing</option>\n");
+      out.write("                    <option value=\"report_HRS_DB_YES_VOD_DB_NO\">Only in HRS DB not in Vodafon DB</option>\n");
+      out.write("                    <option value=\"report_HRS_DB_NO_VOD_DB_YES\">Only in Vodafon DB not in HRS DB</option>\n");
+      out.write("                </select>                \n");
+      out.write("                    </td></tr>\n");
+      out.write("                \n");
+      out.write("                <tr><td>\n");
+      out.write("                        <p>CHARSET  : <input type=\"text\" size=\"10\" name=\"");
+      out.print(FileComparator_billing.FileComparator_CHARSET);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_CHARSET));
       out.write("\" />\n");
-      out.write("                        <p>SPLITTER  : <input type=\"text\" size=\"1\" name=\"SPLITTER\" size=\"3\" value=\"");
-      out.print(myProperties.getProperty("SPLITTER"));
+      out.write("                            &nbsp;SPLITTER: <input type=\"text\" size=\"1\" name=\"");
+      out.print(FileComparator_billing.FileComparator_SPLITTER);
+      out.write("\" size=\"3\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_SPLITTER));
       out.write("\" />\n");
-      out.write("                        <p>MAX_ACTIVATION_DATE  : <input type=\"text\" size=\"30\" name=\"MAX_ACTIVATION_DATE\" value=\"");
-      out.print(myProperties.getProperty("MAX_ACTIVATION_DATE"));
+      out.write("                            &nbsp;MAX_ACTIVATION_DATE: <input type=\"text\" size=\"30\" name=\"");
+      out.print(FileComparator_billing.FileComparator_MAX_ACTIVATION_DATE);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_MAX_ACTIVATION_DATE));
       out.write("\" />\n");
-      out.write("                        <p>List IGNORE_LIST  : <input type=\"text\" size =\"60\" name=\"IGNORE_LIST\" value=\"");
-      out.print(myProperties.getProperty("IGNORE_LIST"));
+      out.write("                            &nbsp;IGNORE: <input type=\"text\" size =\"60\" name=\"");
+      out.print(FileComparator_billing.FileComparator_IGNORE_LIST);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_IGNORE_LIST));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <p><h1> HRS files</h1>                \n");
-      out.write("                        <b>ATLANTIS_DATABASE_filename : </b>                        \n");
-      out.write("                        <select name=\"ATLANTIS_filename\">    \n");
+      out.write("                        <b>DATABASE_filename : </b>                        \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_ATLANTIS_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
                                 out.println("<option>" + myProperties.getProperty("ATLANTIS_filename") + "</option>");
@@ -244,22 +274,32 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                      \n");
-      out.write("                        <p>ATLANTIS_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"ATLANTIS_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("ATLANTIS_MSISDN_index"));
+      out.write("                        <p>MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ATLANTIS_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ATLANTIS_MSISDN_index));
       out.write("\" />\n");
-      out.write("                        <p>ATLANTIS_MSISDN2_index  : <input type=\"text\" size=\"2\" name=\"ATLANTIS_MSISDN2_index\" value=\"");
-      out.print(myProperties.getProperty("ATLANTIS_MSISDN2_index"));
+      out.write("                        <p>MSISDN2_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ATLANTIS_MSISDN2_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ATLANTIS_MSISDN2_index));
       out.write("\" />\n");
-      out.write("                        <p>ATLANTIS_DATE_index : <input type=\"text\" size=\"2\" name=\"ATLANTIS_DATE_index\" value=\"");
-      out.print(myProperties.getProperty("ATLANTIS_DATE_index"));
+      out.write("                        <p>DATE_index : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ATLANTIS_DATE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ATLANTIS_DATE_index));
       out.write("\" />\n");
-      out.write("                        <p>ATLANTIS_STATUS_index  : <input type=\"text\" size=\"2\" name=\"ATLANTIS_STATUS_index\" value=\"");
-      out.print(myProperties.getProperty("ATLANTIS_STATUS_index"));
+      out.write("                        <p>STATUS_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ATLANTIS_STATUS_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ATLANTIS_STATUS_index));
       out.write("\" />\n");
       out.write("\n");
       out.write("\n");
-      out.write("                        <P><b>ATLANTIS_BILLING_filename : </b>                        \n");
-      out.write("                            <select name=\"HRS_BILLING_filename\">    \n");
+      out.write("                        <P><b>BILLING_filename : </b>                        \n");
+      out.write("                            <select name=\"");
+      out.print(FileComparator_billing.FileComparator_HRS_BILLING_filename);
+      out.write("\">    \n");
       out.write("                                ");
 
                                     out.println("<option>" + myProperties.getProperty("HRS_BILLING_filename") + "</option>");
@@ -269,8 +309,10 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                                 
       out.write("\n");
       out.write("                            </select>                      \n");
-      out.write("                        <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"HRS_BILLING_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("HRS_BILLING_MSISDN_index"));
+      out.write("                        <p>HRS_BILLING_MSISDN_index : <input type=\"text\" size=\"2\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_HRS_BILLING_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_HRS_BILLING_MSISDN_index));
       out.write("\" />\n");
       out.write("\n");
       out.write("\n");
@@ -278,7 +320,9 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("                        <!----------------- VODAFON DATABASE ------------------------------------------->\n");
       out.write("                        <h1>VODAFON DATABASE</h1> \n");
       out.write("                        <b>SB_HRS_filename : </b>       \n");
-      out.write("                        <select name=\"SB_HRS_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_SB_HRS_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
                                 out.println("<option>" + myProperties.getProperty("SB_HRS_filename") + "</option>");
@@ -288,15 +332,21 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                         \n");
-      out.write("                        <p>SB_HRS_MSISDN_index : <input type=\"text\" size=\"2\" name=\"SB_HRS_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("SB_HRS_MSISDN_index"));
+      out.write("                        <p>SB_HRS_MSISDN_index : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_SB_HRS_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_SB_HRS_MSISDN_index));
       out.write("\" />\n");
-      out.write("                        <p>SB_HRS_DATE_index  : <input type=\"text\" size=\"2\" name=\"SB_HRS_DATE_index\" value=\"");
-      out.print(myProperties.getProperty("SB_HRS_DATE_index"));
+      out.write("                            &nbsp;SB_HRS_DATE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_SB_HRS_DATE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_SB_HRS_DATE_index));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <b>ELRA_filename : </b>                        \n");
-      out.write("                        <select name=\"ELRA_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
                                 out.println("<option>" + myProperties.getProperty("ELRA_filename") + "</option>");
@@ -306,65 +356,85 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                         \n");
-      out.write("                        <p>ELRA_MSISDN_index : <input type=\"text\" size=\"2\" name=\"ELRA_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("ELRA_MSISDN_index"));
+      out.write("                        <p>ELRA_MSISDN_index : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ELRA_MSISDN_index));
       out.write("\" />\n");
-      out.write("                        <p>ELRA_DATE_index  : <input type=\"text\" size=\"2\" name=\"ELRA_DATE_index\" value=\"");
-      out.print(myProperties.getProperty("ELRA_DATE_index"));
+      out.write("                            &nbsp;ELRA_DATE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_DATE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ELRA_DATE_index));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <b>ELRA_PREPAY_filename : </b>                               \n");
-      out.write("                        <select name=\"ELRA_PREPAY_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_PREPAY_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
-                                out.println("<option>" + myProperties.getProperty("ELRA_PREPAY_filename") + "</option>");
+                                out.println("<option>" + myProperties.getProperty(FileComparator_billing.FileComparator_ELRA_PREPAY_filename) + "</option>");
                                 for (String filename : filenames) {
                                     out.println("<option value='" + filename + "'>" + filename + "</option>");
                                 }
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>ELRA_PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"ELRA_PREPAY_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("ELRA_PREPAY_MSISDN_index"));
+      out.write("                        <p>ELRA_PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_PREPAY_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ELRA_PREPAY_MSISDN_index));
       out.write("\" />\n");
-      out.write("                        <p>ELRA_PREPAY_DATE_index  : <input type=\"text\" size=\"2\" name=\"ELRA_PREPAY_DATE_index\" value=\"");
-      out.print(myProperties.getProperty("ELRA_PREPAY_DATE_index"));
+      out.write("                            &nbsp;ELRA_PREPAY_DATE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_ELRA_PREPAY_DATE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_ELRA_PREPAY_DATE_index));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <!----------------- BILLING ------------------------------------------->\n");
       out.write("                        <h1> VODAFON BILLING</h1>   \n");
       out.write("                        <b>SPLIT_filename : </b>      \n");
-      out.write("                        <select name=\"VODAFONE_SPLIT_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_SPLIT_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
-                                out.println("<option>" + myProperties.getProperty("VODAFONE_SPLIT_filename") + "</option>");
+                                out.println("<option>" + myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_filename) + "</option>");
                                 for (String filename : filenames) {
                                     out.println("<option value='" + filename + "'>" + filename + "</option>");
                                 }
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>SPLIT_MSISDN_index : <input type=\"text\" size=\"2\" name=\"VODAFONE_SPLIT_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("VODAFONE_SPLIT_MSISDN_index"));
-      out.write("\"/>\n");
+      out.write("                        <p>SPLIT_MSISDN_index : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index));
+      out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <b>PREPAY_filename : </b>                        \n");
-      out.write("                        <select name=\"VODAFONE_PREPAY_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_PREPAY_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
-                                out.println("<option>" + myProperties.getProperty("VODAFONE_PREPAY_filename") + "</option>");
+                                out.println("<option>" + myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_filename) + "</option>");
                                 for (String filename : filenames) {
                                     out.println("<option value='" + filename + "'>" + filename + "</option>");
                                 }
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_PREPAY_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("VODAFONE_PREPAY_MSISDN_index"));
+      out.write("                        <p>PREPAY_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>\n");
       out.write("                        <b>MOBILE_filename : </b>                         \n");
-      out.write("                        <select name=\"VODAFONE_MOBILE_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_MOBILE_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_MOBILE_filename") + "</option>");
@@ -374,12 +444,16 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>MOBILE_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_MOBILE_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("VODAFONE_MOBILE_MSISDN_index"));
+      out.write("                        <p>MOBILE_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index));
       out.write("\" />\n");
       out.write("                    </td></tr><tr><td>                     \n");
       out.write("                        <b>FIX_filename : </b>\n");
-      out.write("                        <select name=\"VODAFONE_FIX_filename\">    \n");
+      out.write("                        <select name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_filename);
+      out.write("\">    \n");
       out.write("                            ");
 
                                 out.println("<option>" + myProperties.getProperty("VODAFONE_FIX_filename") + "</option>");
@@ -389,15 +463,17 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
                             
       out.write("\n");
       out.write("                        </select>                        \n");
-      out.write("                        <p>FIX_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"VODAFONE_FIX_MSISDN_index\" value=\"");
-      out.print(myProperties.getProperty("VODAFONE_FIX_MSISDN_index"));
+      out.write("                        <p>FIX_MSISDN_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index));
       out.write("\" />\n");
-      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.write("                            &nbsp;FIX_ERP_index  : <input type=\"text\" size=\"2\" name=\"");
       out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index);
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index));
       out.write("\" />   \n");
-      out.write("                        <p>FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.write("                            &nbsp;FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
       out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index);
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index));

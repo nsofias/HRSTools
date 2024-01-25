@@ -226,7 +226,7 @@ public class FileComparator_billing {
                     return new CustomerEvent(circuitToMSISDN(msisdn), "", "", "HRS_BILLING");
                 })
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("HRS_BILLING_Lines = " + HRS_BILLING_Lines.size());
+        System.out.println("reading "+HRS_BILLING_filename+"... HRS_BILLING_Lines = " + HRS_BILLING_Lines.size());
         //
         //************************ Vodafone DB lines ***************************************************** 
         System.out.println("------------- Vodafon DB files -------------------");
@@ -239,7 +239,7 @@ public class FileComparator_billing {
                 })
                 .filter(validRow)
                 .collect(Collectors.groupingBy(l -> l.getMSISDN()));
-        System.out.println("SB_HRS_lines = " + SB_HRS_lines.size());
+        System.out.println("reading "+SB_HRS_filename+"... SB_HRS_lines = " + SB_HRS_lines.size());
         //
         Map<String, List<CustomerEvent>> elra_Prepay_lines = Files.readAllLines(Paths.get(ELRA_PREPAY_filename), CHARSET)
                 .stream()
