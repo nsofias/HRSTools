@@ -24,7 +24,28 @@
 <%@page import="java.util.Map"%>
 <%@page import="java.util.Enumeration"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<!DOCTYPE html>
+
+
+    <%
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        final JspWriter out1 = out;
+        Map<String, String[]> params = request.getParameterMap();
+        Properties myProperties = new Properties();
+        String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
+        //--
+        params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
+                .forEach(entry -> {
+                    try {
+                        //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
+                    } catch (Exception e) {
+                    }
+                });
+        //
+        if (request.getParameter("directory") == null) {
+            File dir = new File(main_dir);
+            List<String> filenames = Arrays.asList(dir.list());
+    %>     
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -40,26 +61,6 @@
         </style>
     </head>
     <body>
-        <%
-            request.setCharacterEncoding("UTF-8");
-            response.setCharacterEncoding("UTF-8");
-            final JspWriter out1 = out;
-            Map<String, String[]> params = request.getParameterMap();
-            Properties myProperties = new Properties();
-            String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
-            //--
-            params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
-                    .forEach(entry -> {
-                        try {
-                            //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
-                        } catch (Exception e) {
-                        }
-                    });
-            //
-            if (request.getParameter("directory") == null) {
-                File dir = new File(main_dir);
-                List<String> filenames = Arrays.asList(dir.list());
-        %>            
         <form action="params.jsp" method="GET" id="myForm" enctype="multipart/form-data" accept-charset="UTF-8">
             Files Directory for files:
             <select onchange = "form.submit()"name="directory">
@@ -71,84 +72,110 @@
                 %>
             </select>
         </form>
-        <%
-                return;
+    </body>
+</html>
+<%
+        return;
+    }
+    //---------- dir is not null ----------
+    String directory = request.getParameter("directory");
+    //out.println("<a href='javascript:history.back()'>Go Back</a>");
+    String report_type = request.getParameter("report_type");
+    if (report_type != null) {
+        params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+        FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
+        try {
+            myFileComparator.loadFiles();
+        } catch (IOException ex) {
+            out.println(ex);
+        }
+        //-------------- compare -----------------
+
+        if (request.getParameter("run") != null) {
+%>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/csv;charset=UTF-8">
+        <title>JSP Page</title>
+        <style>
+            table, th, td {
+                border: 1px solid white;
+                border-collapse: collapse;
             }
-            //---------- dir is not null ----------
-            String directory = request.getParameter("directory");
-            out.println("<a href='javascript:history.back()'>Go Back</a>");
-            String report_type = request.getParameter("report_type");
-            if (report_type != null) {
-                params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-                FileComparator_billing myFileComparator = new FileComparator_billing(myProperties);
-                try {
-                    myFileComparator.loadFiles();
-                } catch (IOException ex) {
-                    out.println(ex);
-                }
-                //-------------- compare -----------------
-                if (request.getParameter("run") != null) {
-                    if (report_type.equals("report_HRS_DB_YES_HRS_BILLING_NO")) {
-                        myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
-                        return;
-                    } else if (report_type.equals("report_HRS_DB_NO_HRS_BILLING_YES")) {
-                        myFileComparator.report_HRS_DB_NO_HRS_BILLING_YES(out);
-                        return;
-                    } else if (report_type.equals("report_VOD_DB_YES_VOD_BILLING_NO")) {
-                        myFileComparator.report_VOD_DB_YES_VOD_BILLING_NO(out);
-                        return;
-                    } else if (report_type.equals("report_VOD_DB_NO_VOD_BILLING_YES")) {
-                        myFileComparator.report_VOD_DB_NO_VOD_BILLING_YES(out);
-                        return;
-
-                    } else if (report_type.equals("report_HRS_BILLING_YES_VOD_BILLING_NO")) {
-                        myFileComparator.report_HRS_BILLING_YES_VOD_BILLING_NO(out);
-                        return;
-
-                    } else if (report_type.equals("report_HRS_BILLING_NO_VOD_BILLING_YES")) {
-                        myFileComparator.report_HRS_BILLING_NO_VOD_BILLING_YES(out);
-                        return;
-
-                    } else if (report_type.equals("report_HRS_DB_YES_VOD_DB_NO")) {
-                        myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
-                        return;
-
-                    } else if (report_type.equals("report_HRS_DB_NO_VOD_DB_YES")) {
-                        myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
-                        return;
-                    }
-                }
-                //---------save-----------
-                if (request.getParameter("save") != null) {
-                    params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                            .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-                    FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
-                    out.println("saved to:" + main_dir + directory + "\\parameters.properties");
-                    myProperties.store(myFileWriter, "");
-                }
+            th, td {
+                background-color: #96D4D4;
             }
-            //-- read csv files of directory 
-            File dir = new File(main_dir + directory);
-
-            FilenameFilter filter = ( d,                                       name) -> name.endsWith(".csv");
-            List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
-
-            // -- read local properties ---------
-            File paramsFile = new File(main_dir + directory + "\\parameters.properties");
-            if (paramsFile.exists()) {
-                myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
-            } else {
-                myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
+        </style>
+    </head><body>
+<%
+            if (report_type.equals("report_HRS_DB_YES_HRS_BILLING_NO")) {
+                myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
+            } else if (report_type.equals("report_HRS_DB_NO_HRS_BILLING_YES")) {
+                myFileComparator.report_HRS_DB_NO_HRS_BILLING_YES(out);
+            } else if (report_type.equals("report_VOD_DB_YES_VOD_BILLING_NO")) {
+                myFileComparator.report_VOD_DB_YES_VOD_BILLING_NO(out);
+            } else if (report_type.equals("report_VOD_DB_NO_VOD_BILLING_YES")) {
+                myFileComparator.report_VOD_DB_NO_VOD_BILLING_YES(out);
+            } else if (report_type.equals("report_HRS_BILLING_YES_VOD_BILLING_NO")) {
+                myFileComparator.report_HRS_BILLING_YES_VOD_BILLING_NO(out);
+            } else if (report_type.equals("report_HRS_BILLING_NO_VOD_BILLING_YES")) {
+                myFileComparator.report_HRS_BILLING_NO_VOD_BILLING_YES(out);
+            } else if (report_type.equals("report_HRS_DB_YES_VOD_DB_NO")) {
+                myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
+            } else if (report_type.equals("report_HRS_DB_NO_VOD_DB_YES")) {
+                myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);                
             }
-            if (request.getParameter("propertiesFile") != null) {
-                out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
-                myProperties.load(new FileReader("propertiesFile"));
+%>
+    </body></html>
+<%
+            return;
+        }
+        //---------save-----------
+        if (request.getParameter("save") != null) {
+            params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                    .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+            FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+            out.println("saved to:" + main_dir + directory + "\\parameters.properties");
+            myProperties.store(myFileWriter, "");
+        }
+    }
+    //-- read csv files of directory 
+    File dir = new File(main_dir + directory);
+
+    FilenameFilter filter = ( d, name) -> name.endsWith(".csv");
+    List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
+
+    // -- read local properties ---------
+    File paramsFile = new File(main_dir + directory + "\\parameters.properties");
+    if (paramsFile.exists()) {
+        myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
+    } else {
+        myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
+    }
+    if (request.getParameter("propertiesFile") != null) {
+        out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
+        myProperties.load(new FileReader("propertiesFile"));
+    }
+
+
+%>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>JSP Page</title>
+        <style>
+            table, th, td {
+                border: 1px solid white;
+                border-collapse: collapse;
             }
-
-
-        %>
+            th, td {
+                background-color: #96D4D4;
+            }
+        </style>
+    </head>
+    <body>        
         <h1>directory: <%=directory%></h1>
-        <form action="params.jsp" method="POST" id="myForm" >
+        <form action="params.jsp" method="POST" id="myForm" target="_blank" >
             <p><input type="submit" name="save" value="Save parameters" />
 
                 <input type="hidden" name="directory" value="<%=directory%>" />
@@ -159,17 +186,17 @@
             <table >
                 <tr><td>
                         <p><b>Select Report rype:</b> <select name="report_type">
-                    <option value="report_HRS_DB_YES_HRS_BILLING_NO">Only in HRS Database not in HRS Billing</option>
-                    <option value="report_HRS_DB_NO_HRS_BILLING_YES">Only in HRS Billing not in HRS Database</option>
-                    <option value="report_VOD_DB_YES_VOD_BILLING_NO">Only in Vodafon DB not in Vodafon Billing</option>
-                    <option value="report_VOD_DB_NO_VOD_BILLING_YES">Only in Vodafon Billing not in Vodafon DB</option>
-                    <option value="report_HRS_BILLING_YES_VOD_BILLING_NO">Only in HRS Billing not in Vodafon Billing</option>
-                    <option value="report_HRS_BILLING_NO_VOD_BILLING_YES">Only in Vodafon Billing not in HRS Billing</option>
-                    <option value="report_HRS_DB_YES_VOD_DB_NO">Only in HRS DB not in Vodafon DB</option>
-                    <option value="report_HRS_DB_NO_VOD_DB_YES">Only in Vodafon DB not in HRS DB</option>
-                </select>                
+                                <option value="report_HRS_DB_YES_HRS_BILLING_NO">Only in HRS Database not in HRS Billing</option>
+                                <option value="report_HRS_DB_NO_HRS_BILLING_YES">Only in HRS Billing not in HRS Database</option>
+                                <option value="report_VOD_DB_YES_VOD_BILLING_NO">Only in Vodafon DB not in Vodafon Billing</option>
+                                <option value="report_VOD_DB_NO_VOD_BILLING_YES">Only in Vodafon Billing not in Vodafon DB</option>
+                                <option value="report_HRS_BILLING_YES_VOD_BILLING_NO">Only in HRS Billing not in Vodafon Billing</option>
+                                <option value="report_HRS_BILLING_NO_VOD_BILLING_YES">Only in Vodafon Billing not in HRS Billing</option>
+                                <option value="report_HRS_DB_YES_VOD_DB_NO">Only in HRS DB not in Vodafon DB</option>
+                                <option value="report_HRS_DB_NO_VOD_DB_YES">Only in Vodafon DB not in HRS DB</option>
+                            </select>                
                     </td></tr>
-                
+
                 <tr><td>
                         <p>CHARSET  : <input type="text" size="10" name="<%=FileComparator_billing.FileComparator_CHARSET%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_CHARSET)%>" />
                             &nbsp;SPLITTER: <input type="text" size="1" name="<%=FileComparator_billing.FileComparator_SPLITTER%>" size="3" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_SPLITTER)%>" />
