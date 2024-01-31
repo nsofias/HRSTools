@@ -423,7 +423,7 @@ public class FileComparator_billing {
     }
 
     public void report_HRS_BILLING_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
-        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_BILLING_Lines, VODAFONE_BILLING_Lines, e -> true);
+        Set<CustomerEvent> mySet = LEFT_only(VODAFONE_BILLING_Lines, HRS_BILLING_Lines, e -> true);
         //---
         out.println("<h1> Numbers that exist in Vodafon Billing but not in HRS Billing " + mySet.size() + "</h1>");
         out.println();
