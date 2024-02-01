@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package model;
+package tools;
 
 import java.util.Objects;
 
@@ -11,16 +11,19 @@ import java.util.Objects;
  * @author nsofias
  */
 public class CustomerEvent {
-    private final String MSISDN;
-    private String info;
-    private String activationDate;
-    private String status;
 
-    public CustomerEvent(String MSISDN, String activationDate, String status, String info) {
+    private final String MSISDN;
+    private final String info;
+    private final String activationDate;
+    private final String status;
+    private final double value;
+
+    public CustomerEvent(String MSISDN, String activationDate, String status, String info, double value) {
         this.MSISDN = MSISDN;
         this.info = info;
         this.activationDate = activationDate;
         this.status = status;
+        this.value = value;
     }
 
     @Override
@@ -55,11 +58,8 @@ public class CustomerEvent {
 
     @Override
     public String toString() {
-        return MSISDN + ";" + activationDate + ";" + status + ";" + info;
+        return MSISDN + ";" + activationDate + ";" + status + ";" + info+ ";" + value;
     }
-
-
-
 
     /**
      * @return the MSISDN
@@ -76,24 +76,10 @@ public class CustomerEvent {
     }
 
     /**
-     * @param info the info to set
-     */
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    /**
      * @return the activationDate
      */
     public String getActivationDate() {
         return activationDate;
-    }
-
-    /**
-     * @param activationDate the activationDate to set
-     */
-    public void setActivationDate(String activationDate) {
-        this.activationDate = activationDate;
     }
 
     /**
@@ -104,11 +90,10 @@ public class CustomerEvent {
     }
 
     /**
-     * @param status the status to set
+     * @return the value
      */
-    public void setStatus(String status) {
-        this.status = status;
+    public double getValue() {
+        return value;
     }
-
 
 }

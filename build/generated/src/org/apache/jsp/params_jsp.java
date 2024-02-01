@@ -84,27 +84,26 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("\r\n");
       out.write("\r\n");
       out.write("\r\n");
-      out.write("    ");
 
-        request.setCharacterEncoding("UTF-8");
-        response.setCharacterEncoding("UTF-8");
-        final JspWriter out1 = out;
-        Map<String, String[]> params = request.getParameterMap();
-        Properties myProperties = new Properties();
-        String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
-        //--
-        params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
-                .forEach(entry -> {
-                    try {
-                        //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
-                    } catch (Exception e) {
-                    }
-                });
-        //
-        if (request.getParameter("directory") == null) {
-            File dir = new File(main_dir);
-            List<String> filenames = Arrays.asList(dir.list());
-    
+    request.setCharacterEncoding("UTF-8");
+    response.setCharacterEncoding("UTF-8");
+    final JspWriter out1 = out;
+    Map<String, String[]> params = request.getParameterMap();
+    Properties myProperties = new Properties();
+    String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
+    //--
+    params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
+            .forEach(entry -> {
+                try {
+                    //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
+                } catch (Exception e) {
+                }
+            });
+    //
+    if (request.getParameter("directory") == null) {
+        File dir = new File(main_dir);
+        List<String> filenames = Arrays.asList(dir.list());
+
       out.write("     \r\n");
       out.write("<html>\r\n");
       out.write("    <head>\r\n");
@@ -142,6 +141,15 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
     //---------- dir is not null ----------
     String directory = request.getParameter("directory");
     //out.println("<a href='javascript:history.back()'>Go Back</a>");
+//---------save-----------
+    if (request.getParameter("save") != null) {
+        params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+        FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+        out.println("saved to:" + main_dir + directory + "\\parameters.properties");
+        myProperties.store(myFileWriter, "");
+        return;
+    }
     String report_type = request.getParameter("report_type");
     if (report_type != null) {
         params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
@@ -170,6 +178,7 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("            }\r\n");
       out.write("        </style>\r\n");
       out.write("    </head><body>\r\n");
+      out.write("        ");
 
             if (report_type.equals("report_HRS_DB_YES_HRS_BILLING_NO")) {
                 myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
@@ -186,43 +195,37 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
             } else if (report_type.equals("report_HRS_DB_YES_VOD_DB_NO")) {
                 myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
             } else if (report_type.equals("report_HRS_DB_NO_VOD_DB_YES")) {
-                myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);                
+                myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
             }
-
+        
       out.write("\r\n");
       out.write("    </body></html>\r\n");
+      out.write("    ");
 
-            return;
+                return;
+            }
+
         }
-        //---------save-----------
-        if (request.getParameter("save") != null) {
-            params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                    .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-            FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
-            out.println("saved to:" + main_dir + directory + "\\parameters.properties");
-            myProperties.store(myFileWriter, "");
+        //-- read csv files of directory 
+        File dir = new File(main_dir + directory);
+
+        FilenameFilter filter = ( d,     name) -> name.endsWith(".csv");
+        List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
+
+        // -- read local properties ---------
+        File paramsFile = new File(main_dir + directory + "\\parameters.properties");
+        if (paramsFile.exists()) {
+            myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
+        } else {
+            myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
         }
-    }
-    //-- read csv files of directory 
-    File dir = new File(main_dir + directory);
-
-    FilenameFilter filter = ( d, name) -> name.endsWith(".csv");
-    List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
-
-    // -- read local properties ---------
-    File paramsFile = new File(main_dir + directory + "\\parameters.properties");
-    if (paramsFile.exists()) {
-        myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
-    } else {
-        myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
-    }
-    if (request.getParameter("propertiesFile") != null) {
-        out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
-        myProperties.load(new FileReader("propertiesFile"));
-    }
+        if (request.getParameter("propertiesFile") != null) {
+            out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
+            myProperties.load(new FileReader("propertiesFile"));
+        }
 
 
-
+    
       out.write("\r\n");
       out.write("<html>\r\n");
       out.write("    <head>\r\n");
@@ -439,6 +442,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index));
       out.write("\" />\r\n");
+      out.write("                            &nbsp;SPLIT_VALUE_index : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_SPLIT_VALUE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_VALUE_index));
+      out.write("\" />\r\n");
       out.write("                    </td></tr><tr><td>\r\n");
       out.write("                        <b>PREPAY_filename : </b>                        \r\n");
       out.write("                        <select name=\"");
@@ -458,6 +466,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index));
       out.write("\" />\r\n");
+      out.write("                            &nbsp;PREPAY_VALUE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_PREPAY_VALUE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_VALUE_index));
+      out.write("\" />    \r\n");
       out.write("                    </td></tr><tr><td>\r\n");
       out.write("                        <b>MOBILE_filename : </b>                         \r\n");
       out.write("                        <select name=\"");
@@ -477,6 +490,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index));
       out.write("\" />\r\n");
+      out.write("                            &nbsp;MOBILE_VALUE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_MOBILE_VALUE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_MOBILE_VALUE_index));
+      out.write("\" />    \r\n");
       out.write("                    </td></tr><tr><td>                     \r\n");
       out.write("                        <b>FIX_filename : </b>\r\n");
       out.write("                        <select name=\"");
@@ -495,6 +513,11 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index);
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index));
+      out.write("\" />\r\n");
+      out.write("                            &nbsp;FIX_VALUE_index  : <input type=\"text\" size=\"2\" name=\"");
+      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index);
+      out.write("\" value=\"");
+      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index));
       out.write("\" />\r\n");
       out.write("                            &nbsp;FIX_ERP_index  : <input type=\"text\" size=\"2\" name=\"");
       out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index);

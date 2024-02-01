@@ -26,26 +26,26 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 
-    <%
-        request.setCharacterEncoding("UTF-8");
-        response.setCharacterEncoding("UTF-8");
-        final JspWriter out1 = out;
-        Map<String, String[]> params = request.getParameterMap();
-        Properties myProperties = new Properties();
-        String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
-        //--
-        params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
-                .forEach(entry -> {
-                    try {
-                        //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
-                    } catch (Exception e) {
-                    }
-                });
-        //
-        if (request.getParameter("directory") == null) {
-            File dir = new File(main_dir);
-            List<String> filenames = Arrays.asList(dir.list());
-    %>     
+<%
+    request.setCharacterEncoding("UTF-8");
+    response.setCharacterEncoding("UTF-8");
+    final JspWriter out1 = out;
+    Map<String, String[]> params = request.getParameterMap();
+    Properties myProperties = new Properties();
+    String main_dir = "C:\\myfiles\\data\\HRSTools\\data\\";
+    //--
+    params.entrySet().stream().filter(entry -> !entry.getKey().equals("save"))
+            .forEach(entry -> {
+                try {
+                    //out1.println("<p>" + entry.getKey() + " = " + entry.getValue()[0]);
+                } catch (Exception e) {
+                }
+            });
+    //
+    if (request.getParameter("directory") == null) {
+        File dir = new File(main_dir);
+        List<String> filenames = Arrays.asList(dir.list());
+%>     
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -80,6 +80,15 @@
     //---------- dir is not null ----------
     String directory = request.getParameter("directory");
     //out.println("<a href='javascript:history.back()'>Go Back</a>");
+//---------save-----------
+    if (request.getParameter("save") != null) {
+        params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
+                .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
+        FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
+        out.println("saved to:" + main_dir + directory + "\\parameters.properties");
+        myProperties.store(myFileWriter, "");
+        return;
+    }
     String report_type = request.getParameter("report_type");
     if (report_type != null) {
         params.entrySet().stream().forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
@@ -107,7 +116,7 @@
             }
         </style>
     </head><body>
-<%
+        <%
             if (report_type.equals("report_HRS_DB_YES_HRS_BILLING_NO")) {
                 myFileComparator.report_HRS_DB_YES_HRS_BILLING_NO(out);
             } else if (report_type.equals("report_HRS_DB_NO_HRS_BILLING_YES")) {
@@ -123,42 +132,35 @@
             } else if (report_type.equals("report_HRS_DB_YES_VOD_DB_NO")) {
                 myFileComparator.report_HRS_DB_YES_VOD_DB_NO(out);
             } else if (report_type.equals("report_HRS_DB_NO_VOD_DB_YES")) {
-                myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);                
+                myFileComparator.report_HRS_DB_NO_VOD_DB_YES(out);
             }
-%>
+        %>
     </body></html>
-<%
-            return;
+    <%
+                return;
+            }
+
         }
-        //---------save-----------
-        if (request.getParameter("save") != null) {
-            params.entrySet().stream().filter(entry -> !entry.getKey().equals("compare"))
-                    .forEach(entry -> myProperties.put(entry.getKey(), entry.getValue()[0]));
-            FileWriter myFileWriter = new FileWriter(main_dir + directory + "\\parameters.properties", StandardCharsets.UTF_8);
-            out.println("saved to:" + main_dir + directory + "\\parameters.properties");
-            myProperties.store(myFileWriter, "");
+        //-- read csv files of directory 
+        File dir = new File(main_dir + directory);
+
+        FilenameFilter filter = ( d,     name) -> name.endsWith(".csv");
+        List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
+
+        // -- read local properties ---------
+        File paramsFile = new File(main_dir + directory + "\\parameters.properties");
+        if (paramsFile.exists()) {
+            myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
+        } else {
+            myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
         }
-    }
-    //-- read csv files of directory 
-    File dir = new File(main_dir + directory);
-
-    FilenameFilter filter = ( d, name) -> name.endsWith(".csv");
-    List<String> filenames = Arrays.asList(dir.list(filter)).stream().map(s -> main_dir + directory + "\\" + s).collect(Collectors.toList());
-
-    // -- read local properties ---------
-    File paramsFile = new File(main_dir + directory + "\\parameters.properties");
-    if (paramsFile.exists()) {
-        myProperties.load(new FileReader(paramsFile, StandardCharsets.UTF_8));
-    } else {
-        myProperties.load(new FileReader("C:\\myfiles\\data\\HRSTools\\conf\\parameters.properties", StandardCharsets.UTF_8));
-    }
-    if (request.getParameter("propertiesFile") != null) {
-        out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
-        myProperties.load(new FileReader("propertiesFile"));
-    }
+        if (request.getParameter("propertiesFile") != null) {
+            out1.println("<p>propertiesFile = " + request.getParameter("propertiesFile"));
+            myProperties.load(new FileReader("propertiesFile"));
+        }
 
 
-%>
+    %>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -282,6 +284,7 @@
                             %>
                         </select>                        
                         <p>SPLIT_MSISDN_index : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_MSISDN_index)%>" />
+                            &nbsp;SPLIT_VALUE_index : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_SPLIT_VALUE_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_SPLIT_VALUE_index)%>" />
                     </td></tr><tr><td>
                         <b>PREPAY_filename : </b>                        
                         <select name="<%=FileComparator_billing.FileComparator_VODAFONE_PREPAY_filename%>">    
@@ -293,6 +296,7 @@
                             %>
                         </select>                        
                         <p>PREPAY_MSISDN_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_MSISDN_index)%>" />
+                            &nbsp;PREPAY_VALUE_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_PREPAY_VALUE_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_PREPAY_VALUE_index)%>" />    
                     </td></tr><tr><td>
                         <b>MOBILE_filename : </b>                         
                         <select name="<%=FileComparator_billing.FileComparator_VODAFONE_MOBILE_filename%>">    
@@ -304,6 +308,7 @@
                             %>
                         </select>                        
                         <p>MOBILE_MSISDN_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_MOBILE_MSISDN_index)%>" />
+                            &nbsp;MOBILE_VALUE_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_MOBILE_VALUE_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_MOBILE_VALUE_index)%>" />    
                     </td></tr><tr><td>                     
                         <b>FIX_filename : </b>
                         <select name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_filename%>">    
@@ -315,6 +320,7 @@
                             %>
                         </select>                        
                         <p>FIX_MSISDN_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index)%>" />
+                            &nbsp;FIX_VALUE_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index)%>" />
                             &nbsp;FIX_ERP_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index)%>" />   
                             &nbsp;FIX_CIRCUIT_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index)%>" />       
                     </td></tr>
