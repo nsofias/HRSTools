@@ -18,6 +18,7 @@ public class CustomerEvent {
     private final String status;
     private final double value;
 
+
     public CustomerEvent(String MSISDN, String activationDate, String status, String info, double value) {
         this.MSISDN = MSISDN;
         this.info = info;

@@ -8,14 +8,17 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import static java.util.Comparator.comparing;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,6 +89,8 @@ public class FileComparator_billing {
     //
     List IGNORE_LIST = Arrays.asList("13", "6", "69", "72", "23", "75", "57", "4", "33", "24", "20", "19", "76");
     Map<String, String> circuitToMSISDN_mapping = new HashMap();
+    Set<String> blocked_numbers = new HashSet();
+    Set<String> secondary_numbers = new HashSet();
     //------------------ HRS database ------------------------
     String ATLANTIS_filename;
     int ATLANTIS_MSISDN_index;
@@ -128,7 +133,7 @@ public class FileComparator_billing {
     Predicate<CustomerEvent> validRow = s -> !s.getMSISDN().isEmpty() && isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
     Predicate<CustomerEvent> myDBFilter = s -> !IGNORE_LIST.contains(s.getStatus()) && !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
     Predicate<Entry<String, List<CustomerEvent>>> hasBillingValue = e -> e.getValue().stream()
-            .collect(Collectors.summingDouble(custEvent -> custEvent.getValue())) != 0;
+            .collect(Collectors.summingDouble(custEvent -> custEvent.getValue())) >= 2.48;
 
     //#############################################################################################
     public FileComparator_billing(Properties myProperties) {
@@ -208,6 +213,10 @@ public class FileComparator_billing {
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     //System.out.println("-> activationDate=" + activationDate+" S="+s);
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
+                    String blocked = s.split(SPLITTER).length > 15 ? s.split(SPLITTER)[15].trim() : "";
+                    if (blocked.equals("1")&&!msisdn.isEmpty()) {
+                        blocked_numbers.add(msisdn);
+                    }
                     return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), status, "ATLANTIS", 0.0);
                 })
                 .filter(validRow)
@@ -220,6 +229,10 @@ public class FileComparator_billing {
                     String secondMSISDN = ATLANTIS_MSISDN2_index >= 0 && s.split(SPLITTER).length > ATLANTIS_MSISDN2_index ? s.split(SPLITTER)[ATLANTIS_MSISDN2_index] : "";
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
+                    String blocked = s.split(SPLITTER).length > 15 ? s.split(SPLITTER)[15].trim() : "";
+                    if (blocked.equals("1")&&!secondMSISDN.isEmpty()) {
+                        blocked_numbers.add(secondMSISDN);
+                    }
                     return new CustomerEvent(circuitToMSISDN(secondMSISDN), formatDate(activationDate), status, "ATLANTIS_2ndlines", 0.0);
                 })
                 .filter(validRow)
@@ -228,6 +241,9 @@ public class FileComparator_billing {
         HRS_DB_Lines.putAll(ATLANTIS_2ndlines);
         HRS_DB_Lines.putAll(ATLANTIS_lines);
         System.out.println("ATLANTIS_lines total = " + ATLANTIS_lines.size());
+        //--- secondary_numbers  ---
+        secondary_numbers.addAll(ATLANTIS_2ndlines.keySet());
+        //************************************
         System.out.println("------------- HRS Billing files----");
         HRS_BILLING_Lines = Files.readAllLines(Paths.get(HRS_BILLING_filename), CHARSET)
                 .stream()
@@ -386,7 +402,7 @@ public class FileComparator_billing {
             return false;
         }
         try {
-            Long.parseLong(strNum);
+            Long.valueOf(strNum);
         } catch (NumberFormatException nfe) {
             return false;
         }
@@ -398,7 +414,7 @@ public class FileComparator_billing {
             return false;
         }
         try {
-            Double.parseDouble(strNum);
+            Double.valueOf(strNum);
         } catch (NumberFormatException nfe) {
             return false;
         }
@@ -408,9 +424,9 @@ public class FileComparator_billing {
     public void report_HRS_DB_YES_HRS_BILLING_NO(JspWriter out) throws IOException {
         //--- filter out zero values ---
         Map<String, List<CustomerEvent>> withBillingValue = filter(VODAFONE_BILLING_Lines, hasBillingValue);
-
+        System.out.println("blocked_number size = " + blocked_numbers.size());
         Map<String, List<CustomerEvent>> alsoInVodafonBlilling = exist_RIGHT(HRS_DB_Lines, withBillingValue, e -> true);
-        Map<String, List<CustomerEvent>> mySet = LEFT_only(alsoInVodafonBlilling, HRS_BILLING_Lines, e -> true);
+        Map<String, List<CustomerEvent>> mySet = LEFT_only(alsoInVodafonBlilling, HRS_BILLING_Lines, e -> !blocked_numbers.contains(e.getKey()) && !secondary_numbers.contains(e.getKey()));
         //---
         out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing " + mySet.size() + "</h1>");
         out.println();
