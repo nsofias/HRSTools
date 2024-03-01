@@ -8,7 +8,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import static java.util.Comparator.comparing;
@@ -508,7 +507,8 @@ public class FileComparator_billing {
     }
 
     public void report_HRS_BILLING_NO_VOD_BILLING_YES(JspWriter out) throws IOException {
-        Map<String, List<CustomerEvent>> mySet = LEFT_only(VODAFONE_BILLING_Lines, HRS_BILLING_Lines, hasBillingValue);
+        Map<String, List<CustomerEvent>> withBillingValue = filter(VODAFONE_BILLING_Lines, hasBillingValue);
+        Map<String, List<CustomerEvent>> mySet = LEFT_only(withBillingValue, HRS_BILLING_Lines, e -> !blocked_numbers.contains(e.getKey()) && !secondary_numbers.contains(e.getKey()));
         //----
         out.println("<h1> Numbers that exist in Vodafon Billing but not in HRS Billing " + mySet.size() + "</h1>");
         out.println();
