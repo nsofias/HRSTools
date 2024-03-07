@@ -130,9 +130,9 @@ public class FileComparator_billing {
     int VODAFONE_FIX_VALUE_index;
     //
     Predicate<CustomerEvent> validRow = s -> !s.getMSISDN().isEmpty() && isNumeric(s.getMSISDN()) && !s.getActivationDate().isEmpty();
-    Predicate<CustomerEvent> myDBFilter = s -> !IGNORE_LIST.contains(s.getStatus()) && !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
+    Predicate<CustomerEvent> myDBFilter = s ->  !IGNORE_LIST.contains(s.getStatus()) && !s.getActivationDate().isEmpty() && s.getActivationDate().compareTo(MAX_ACTIVATION_DATE) < 0;
     Predicate<Entry<String, List<CustomerEvent>>> hasBillingValue = e -> e.getValue().stream()
-            .collect(Collectors.summingDouble(custEvent -> custEvent.getValue())) >= 2.48;
+            .collect(Collectors.summingDouble(custEvent -> custEvent.getValue())) > 2.48;
 
     //#############################################################################################
     public FileComparator_billing(Properties myProperties) {
@@ -213,7 +213,7 @@ public class FileComparator_billing {
                     //System.out.println("-> activationDate=" + activationDate+" S="+s);
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
                     String blocked = s.split(SPLITTER).length > 15 ? s.split(SPLITTER)[15].trim() : "";
-                    if (blocked.equals("1")&&!msisdn.isEmpty()) {
+                    if (blocked.equals("1") && !msisdn.isEmpty()) {
                         blocked_numbers.add(msisdn);
                     }
                     return new CustomerEvent(circuitToMSISDN(msisdn), formatDate(activationDate), status, "ATLANTIS", 0.0);
@@ -229,7 +229,7 @@ public class FileComparator_billing {
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
                     String blocked = s.split(SPLITTER).length > 15 ? s.split(SPLITTER)[15].trim() : "";
-                    if (blocked.equals("1")&&!secondMSISDN.isEmpty()) {
+                    if (blocked.equals("1") && !secondMSISDN.isEmpty()) {
                         blocked_numbers.add(secondMSISDN);
                     }
                     return new CustomerEvent(circuitToMSISDN(secondMSISDN), formatDate(activationDate), status, "ATLANTIS_2ndlines", 0.0);
@@ -423,11 +423,14 @@ public class FileComparator_billing {
     public void report_HRS_DB_YES_HRS_BILLING_NO(JspWriter out) throws IOException {
         //--- filter out zero values ---
         Map<String, List<CustomerEvent>> withBillingValue = filter(VODAFONE_BILLING_Lines, hasBillingValue);
-        System.out.println("blocked_number size = " + blocked_numbers.size());
         Map<String, List<CustomerEvent>> alsoInVodafonBlilling = exist_RIGHT(HRS_DB_Lines, withBillingValue, e -> true);
         Map<String, List<CustomerEvent>> mySet = LEFT_only(alsoInVodafonBlilling, HRS_BILLING_Lines, e -> !blocked_numbers.contains(e.getKey()) && !secondary_numbers.contains(e.getKey()));
+        out.println("VODAFONE_BILLING_Lines" + VODAFONE_BILLING_Lines.size());
+        out.println("withBillingValue" + withBillingValue.size());
+        out.println("alsoInVodafonBlilling" + alsoInVodafonBlilling.size());
+        out.println("blocked_number size = " + blocked_numbers.size());
         //---
-        out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing " + mySet.size() + "</h1>");
+        out.println("<h1> Numbers that exist in HRS Database but not in HRS Billing </h1>");
         out.println();
         out.println("<p>" + "*************** SUMMARY ***********");
         out.println("<p>" + "HRS_DB records (Atlantis) : " + HRS_DB_Lines.size());
@@ -559,7 +562,7 @@ public class FileComparator_billing {
 
     public void report(Map<String, List<CustomerEvent>> mySet, Predicate<CustomerEvent> myDBFilter, JspWriter out) throws IOException {
         out.println("<table>");
-        out.println("<tr><th>MSISDN</th><th>activationDate</th><th>status</th><th>source file</th></tr>");
+        out.println("<tr><th>MSISDN</th><th>status</th><th>source file</th></tr>");
         mySet.values().stream().flatMap(e -> e.stream())
                 .filter(s -> isNumeric(s.getMSISDN()))
                 .filter(myDBFilter)
@@ -567,8 +570,8 @@ public class FileComparator_billing {
                 .sorted(Comparator.comparing(s -> s.getStatus()))
                 .forEach(s -> {
                     try {
-                        String activationDate = s.getActivationDate().isEmpty() ? s.getActivationDate() : formatDateAsNowFormated(s.getActivationDate());
-                        out.println("<tr><td>" + s.getMSISDN().replace("-OLD", "").replace("-old", "") + "</td><td>" + activationDate + "</td><td>" + s.getStatus() + "</td><td>" + s.getInfo() + "</td><td>" + s.getValue() + "</td></tr>");
+                        //String activationDate = s.getActivationDate().isEmpty() ? s.getActivationDate() : formatDateAsNowFormated(s.getActivationDate());
+                        out.println("<tr><td>" + s.getMSISDN().replace("-OLD", "").replace("-old", "") + "</td><td>" + s.getStatus() + "</td><td>" + s.getInfo() + "</td></tr>");
                     } catch (IOException ex) {
                     }
                 });
