@@ -321,7 +321,6 @@
                         </select>                        
                         <p>FIX_MSISDN_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_MSISDN_index)%>" />
                             &nbsp;FIX_VALUE_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index)%>" />
-                            &nbsp;FIX_ERP_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index)%>" />   
                             &nbsp;FIX_CIRCUIT_index  : <input type="text" size="2" name="<%=FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index%>" value="<%=myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index)%>" />       
                     </td></tr>
             </table>

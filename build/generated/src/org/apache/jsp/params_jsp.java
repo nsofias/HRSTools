@@ -519,11 +519,6 @@ public final class params_jsp extends org.apache.jasper.runtime.HttpJspBase
       out.write("\" value=\"");
       out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_VALUE_index));
       out.write("\" />\r\n");
-      out.write("                            &nbsp;FIX_ERP_index  : <input type=\"text\" size=\"2\" name=\"");
-      out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index);
-      out.write("\" value=\"");
-      out.print(myProperties.getProperty(FileComparator_billing.FileComparator_VODAFONE_FIX_ERP_index));
-      out.write("\" />   \r\n");
       out.write("                            &nbsp;FIX_CIRCUIT_index  : <input type=\"text\" size=\"2\" name=\"");
       out.print(FileComparator_billing.FileComparator_VODAFONE_FIX_CIRCUIT_index);
       out.write("\" value=\"");
