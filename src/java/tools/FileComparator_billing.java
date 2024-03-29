@@ -197,9 +197,15 @@ public class FileComparator_billing {
                 .stream()
                 .forEach(s -> {
                     String msisdn = s.split(SPLITTER).length > VODAFONE_FIX_MSISDN_index ? s.split(SPLITTER)[VODAFONE_FIX_MSISDN_index] : "";
+                    String erpNumber = s.split(SPLITTER).length > VODAFONE_FIX_CIRCUIT_index-1 ? s.split(SPLITTER)[VODAFONE_FIX_CIRCUIT_index-1] : "";
                     String circuit = VODAFONE_FIX_CIRCUIT_index >= 0 && s.split(SPLITTER).length > VODAFONE_FIX_CIRCUIT_index ? s.split(SPLITTER)[VODAFONE_FIX_CIRCUIT_index] : "";
-                    if (!circuit.isEmpty() && !msisdn.isEmpty()) {
+                    if (!msisdn.isEmpty()) {
                         MSISDN_to_CIRCUIT_mapping.put(msisdn, circuit);
+                        //System.out.println("MSISDN_to_CIRCUIT_mapping added:"+msisdn);
+                    }
+                    if (!erpNumber.isEmpty() && !erpNumber.equals(msisdn)) {
+                        MSISDN_to_CIRCUIT_mapping.put(erpNumber, circuit);
+                        System.out.println("MSISDN_to_CIRCUIT_mapping added:"+erpNumber);
                     }
                 });
         System.out.println("circuitToMSISDN_mapping = " + MSISDN_to_CIRCUIT_mapping.size());
@@ -210,6 +216,7 @@ public class FileComparator_billing {
                 .stream()
                 .map(s -> {
                     String msisdn = s.split(SPLITTER).length > ATLANTIS_MSISDN_index ? s.split(SPLITTER)[ATLANTIS_MSISDN_index] : "";
+                    msisdn = msisdn.replace("-OLD", "").replace("-old", "");
                     String activationDate = s.split(SPLITTER).length > ATLANTIS_DATE_index ? s.split(SPLITTER)[ATLANTIS_DATE_index] : "";
                     //System.out.println("-> activationDate=" + activationDate+" S="+s);
                     String status = ATLANTIS_STATUS_index >= 0 && s.split(SPLITTER).length > ATLANTIS_STATUS_index ? s.split(SPLITTER)[ATLANTIS_STATUS_index] : "";
@@ -376,7 +383,7 @@ public class FileComparator_billing {
                     //boolean res =!(M2.containsKey(e.getKey()) || (circuit!=null && M2.containsKey(circuit)) );
                     boolean res = M2.containsKey(e.getKey());
                     boolean res1 = M2.containsKey(circuit);
-                    System.out.println(e.getKey() + " " + circuit + "->" + res + " " + res1);
+                    //System.out.println(e.getKey() + " " + circuit + "->" + res + " " + res1);
                     return !(M2.containsKey(e.getKey()) || (circuit != null && M2.containsKey(circuit)));
                 })
                 .collect(Collectors.toMap((Entry e) -> (String) e.getKey(), e -> e.getValue()));
@@ -387,7 +394,7 @@ public class FileComparator_billing {
                 .filter(myFilter)
                 .filter(e -> {
                     String circuit = MSISDN_to_CIRCUIT_mapping.get(e.getKey());
-                    return M2.containsKey(e.getKey()) || M2.containsKey(circuit);
+                    return M2.containsKey(e.getKey()) || (circuit!=null && !circuit.isEmpty() && M2.containsKey(circuit));
                 })
                 .collect(Collectors.toMap((Entry e) -> (String) e.getKey(), e -> e.getValue()));
     }
@@ -466,7 +473,7 @@ public class FileComparator_billing {
 
     //--------------------------------
     public void report_VOD_DB_YES_VOD_BILLING_NO(JspWriter out) throws IOException {
-        Map<String, List<CustomerEvent>> res = LEFT_only(VODAFONE_DB_Lines, VODAFONE_BILLING_Lines, e -> true);
+        Map<String, List<CustomerEvent>> res = LEFT_only(VODAFONE_DB_Lines, VODAFONE_BILLING_Lines, e -> !MSISDN_to_CIRCUIT_mapping.containsKey(e.getKey()));
         Map<String, List<CustomerEvent>> mySetWithoutPrepay = LEFT_only(res, elra_Prepay_lines, e -> true);
         //---VODAFONE_DB_Lines, VODAFONE_BILLING_Lines
         out.println("<h1> Numbers that exist in Vodafon DB but not in Vodafon Billing</h1>");
